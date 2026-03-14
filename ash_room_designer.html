@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASH Room Designer — Home Theater 7.1.4</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap');
+
+:root {
+  --bg:        #080b12;
+  --bg2:       #0d1120;
+  --bg3:       #121828;
+  --border:    #1c2840;
+  --border2:   #243254;
+  --acc:       #00d4ff;
+  --acc-dim:   rgba(0,212,255,0.12);
+  --acc2:      #ff5722;
+  --acc3:      #7c3aed;
+  --acc4:      #10b981;
+  --text:      #dde6f0;
+  --text2:     #7a8fa8;
+  --text3:     #3d5070;
+  --warn:      #f59e0b;
+  --glow:      0 0 12px rgba(0,212,255,0.25);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 46px 1fr;
+  grid-template-columns: 1fr;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ HEADER */
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+  z-index: 50;
+}
+
+.logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.logo-mark {
+  width: 28px; height: 28px;
+  background: conic-gradient(var(--acc) 0deg, var(--acc3) 180deg, var(--acc2) 360deg);
+  border-radius: 6px;
+  display: grid; place-items: center;
+  font-size: 14px; color: #000;
+  font-weight: 900;
+}
+.logo-name  { font-size: 0.9rem; font-weight: 800; letter-spacing: -0.02em; }
+.logo-sub   { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--acc); opacity: 0.7; display: block; }
+
+.h-sep { width: 1px; height: 22px; background: var(--border); }
+
+.h-tabs { display: flex; gap: 2px; }
+.h-tab {
+  font-family: 'Space Mono', monospace; font-size: 0.62rem;
+  padding: 5px 12px; border-radius: 4px;
+  border: 1px solid transparent; background: transparent;
+  color: var(--text2); cursor: pointer;
+  transition: all 0.12s; letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.h-tab:hover  { color: var(--text); border-color: var(--border2); }
+.h-tab.active { color: var(--acc); border-color: var(--acc); background: var(--acc-dim); }
+
+.h-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+.status-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px;
+  font-family: 'Space Mono', monospace; font-size: 0.58rem;
+  color: var(--text2); cursor: pointer;
+  transition: all 0.15s;
+}
+.status-pill:hover { border-color: var(--acc); color: var(--acc); }
+.status-led { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
+.status-led.on  { background: var(--acc4); box-shadow: 0 0 6px var(--acc4); }
+.status-led.err { background: var(--acc2); box-shadow: 0 0 6px var(--acc2); }
+
+.btn {
+  font-family: 'Space Mono', monospace; font-size: 0.62rem;
+  padding: 5px 12px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg3);
+  color: var(--text); cursor: pointer; transition: all 0.12s;
+  letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
+}
+.btn:hover    { border-color: var(--acc); color: var(--acc); }
+.btn.primary  { background: var(--acc); border-color: var(--acc); color: #000; font-weight: 700; }
+.btn.primary:hover { background: #00b4d8; border-color: #00b4d8; }
+.btn.danger   { border-color: var(--acc2); color: var(--acc2); }
+.btn.success  { border-color: var(--acc4); color: var(--acc4); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ MAIN LAYOUT */
+.workspace {
+  display: grid;
+  grid-template-columns: 240px 1fr 260px;
+  overflow: hidden;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ PANELS */
+.panel {
+  background: var(--bg2);
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.panel-l { border-right: 1px solid var(--border); }
+.panel-r { border-left:  1px solid var(--border); }
+
+.pane {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+}
+
+.pane-title {
+  font-family: 'Space Mono', monospace; font-size: 0.55rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text2); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.pane-title::before {
+  content: ''; width: 3px; height: 10px;
+  background: var(--acc); border-radius: 2px; flex-shrink: 0;
+}
+
+/* ── Room dims ── */
+.dims-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.dim-field { display: flex; flex-direction: column; gap: 3px; }
+.dim-label { font-family: 'Space Mono', monospace; font-size: 0.56rem; color: var(--text2); }
+.dim-input {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--acc);
+  font-family: 'Space Mono', monospace; font-size: 0.82rem;
+  padding: 5px 0; width: 100%; text-align: center;
+  transition: border-color 0.12s;
+}
+.dim-input:focus { outline: none; border-color: var(--acc); box-shadow: var(--glow); }
+
+/* ── Presets ── */
+.preset-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.preset {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text2); cursor: pointer; padding: 8px 6px;
+  font-family: 'Syne', sans-serif; font-size: 0.7rem;
+  transition: all 0.12s; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.preset:hover { border-color: var(--acc); color: var(--acc); background: var(--acc-dim); }
+.preset.active { border-color: var(--acc); color: var(--acc); background: var(--acc-dim); }
+.preset-ico { font-size: 1.1rem; }
+
+/* ── Layout chips ── */
+.layout-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip {
+  font-family: 'Space Mono', monospace; font-size: 0.58rem;
+  padding: 3px 9px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text2); cursor: pointer; transition: all 0.12s;
+}
+.chip:hover  { border-color: var(--acc); color: var(--acc); }
+.chip.active { border-color: var(--acc); color: var(--acc); background: var(--acc-dim); }
+
+/* ── Speaker list ── */
+.spk-list { display: flex; flex-direction: column; gap: 3px; }
+.spk-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg);
+  cursor: pointer; transition: all 0.12s; font-size: 0.72rem;
+}
+.spk-row:hover  { border-color: var(--border2); }
+.spk-row.sel    { border-color: var(--acc); background: var(--acc-dim); }
+.spk-led { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.spk-ch  { font-weight: 700; min-width: 30px; font-size: 0.7rem; }
+.spk-name { flex: 1; color: var(--text2); font-size: 0.65rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spk-az  { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--acc); white-space: nowrap; }
+
+/* ── SOFA drop ── */
+.sofa-zone {
+  border: 2px dashed var(--border); border-radius: 6px;
+  padding: 14px 10px; text-align: center; cursor: pointer;
+  transition: all 0.12s; font-size: 0.72rem; color: var(--text2);
+}
+.sofa-zone:hover { border-color: var(--acc); color: var(--acc); background: var(--acc-dim); }
+.sofa-zone .ico { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+.sofa-loaded { color: var(--acc4); font-family: 'Space Mono', monospace; font-size: 0.62rem; margin-top: 6px; display: none; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ VIEWPORT */
+.viewport { position: relative; overflow: hidden; background: #060910; }
+#c { width: 100%; height: 100%; display: block; }
+
+.vp-info { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
+.vp-badge {
+  background: rgba(8,11,18,0.88); border: 1px solid var(--border);
+  border-radius: 4px; padding: 4px 9px;
+  font-family: 'Space Mono', monospace; font-size: 0.58rem;
+  color: var(--text2); backdrop-filter: blur(6px);
+}
+.vp-badge b { color: var(--acc); }
+
+.vp-cam { position: absolute; bottom: 10px; right: 10px; display: flex; flex-direction: column; gap: 3px; }
+.cam-btn {
+  width: 30px; height: 30px;
+  background: rgba(8,11,18,0.88); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text2); cursor: pointer;
+  display: grid; place-items: center; font-size: 0.8rem;
+  backdrop-filter: blur(6px); transition: all 0.12s;
+}
+.cam-btn:hover { border-color: var(--acc); color: var(--acc); }
+
+.vp-hint {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(8,11,18,0.8); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 14px;
+  font-family: 'Space Mono', monospace; font-size: 0.56rem;
+  color: var(--text3); pointer-events: none; backdrop-filter: blur(6px);
+  white-space: nowrap;
+}
+
+/* Selection popup */
+.sel-pop {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(8,11,18,0.95); border: 1px solid var(--acc);
+  border-radius: 6px; padding: 12px; min-width: 200px;
+  display: none; backdrop-filter: blur(8px);
+  box-shadow: var(--glow);
+}
+.sel-pop.show { display: block; }
+.sel-pop-title { font-size: 0.78rem; font-weight: 700; color: var(--acc); margin-bottom: 10px; }
+.sel-xyz { display: grid; grid-template-columns: 16px 1fr; gap: 4px 8px; align-items: center; margin-bottom: 10px; }
+.sel-xyz label { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text2); }
+.sel-xyz input {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
+  color: var(--acc); font-family: 'Space Mono', monospace; font-size: 0.7rem;
+  padding: 3px 6px; width: 100%;
+}
+.sel-xyz input:focus { outline: none; border-color: var(--acc); }
+.sel-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.sel-stat {
+  background: var(--bg); border-radius: 3px; padding: 4px 6px;
+  font-family: 'Space Mono', monospace;
+}
+.sel-stat .k { font-size: 0.52rem; color: var(--text2); }
+.sel-stat .v { font-size: 0.7rem; color: var(--text); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ RIGHT PANEL PARAMS */
+.param { margin-bottom: 8px; }
+.param label { display: block; font-size: 0.68rem; color: var(--text2); margin-bottom: 3px; }
+select, .param select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--text);
+  font-family: 'Space Mono', monospace; font-size: 0.64rem;
+  padding: 5px 7px; cursor: pointer; transition: border-color 0.12s;
+}
+select:focus { outline: none; border-color: var(--acc); }
+
+.slider-wrap { margin-bottom: 10px; }
+.slider-head  { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.68rem; }
+.slider-head .val { font-family: 'Space Mono', monospace; color: var(--acc); }
+input[type=range] {
+  width: 100%; height: 2px; appearance: none;
+  background: var(--border); border-radius: 1px; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  appearance: none; width: 12px; height: 12px;
+  background: var(--acc); border-radius: 50%;
+}
+
+.toggle-wrap { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.toggle-label { font-size: 0.68rem; color: var(--text2); }
+.tog {
+  width: 32px; height: 16px; background: var(--border);
+  border-radius: 8px; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0;
+}
+.tog.on { background: var(--acc); }
+.tog::after {
+  content: ''; position: absolute; width: 12px; height: 12px;
+  background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: left 0.2s;
+}
+.tog.on::after { left: 18px; }
+
+/* Log */
+.log {
+  padding: 8px 12px; overflow-y: auto; flex: 1;
+  font-family: 'Space Mono', monospace; font-size: 0.58rem;
+  line-height: 1.65; min-height: 80px; max-height: 140px;
+}
+.log-line             { color: var(--text2); }
+.log-line.i           { color: var(--acc); }
+.log-line.ok          { color: var(--acc4); }
+.log-line.w           { color: var(--warn); }
+.log-line.e           { color: var(--acc2); }
+
+/* Process area */
+.process-area {
+  padding: 12px 14px; border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+}
+.prog-bar { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; display: none; }
+.prog-bar.show { display: block; }
+.prog-fill {
+  height: 100%; background: linear-gradient(90deg, var(--acc), var(--acc3));
+  border-radius: 1px; transition: width 0.4s; width: 0%;
+}
+.gen-btn {
+  width: 100%; background: linear-gradient(135deg, var(--acc) 0%, var(--acc3) 100%);
+  border: none; border-radius: 5px; color: #000;
+  font-family: 'Space Mono', monospace; font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.07em; padding: 10px; cursor: pointer;
+  text-transform: uppercase; transition: opacity 0.15s;
+}
+.gen-btn:hover    { opacity: 0.88; }
+.gen-btn:disabled { opacity: 0.3; cursor: default; }
+.exp-btn {
+  width: 100%; background: transparent;
+  border: 1px solid var(--acc3); border-radius: 5px;
+  color: var(--acc3); font-family: 'Space Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.06em; padding: 7px;
+  cursor: pointer; text-transform: uppercase; transition: all 0.15s;
+}
+.exp-btn:hover { background: rgba(124,58,237,0.12); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Tooltip */
+#tt {
+  position: fixed; pointer-events: none;
+  background: rgba(8,11,18,0.97); border: 1px solid var(--acc);
+  border-radius: 4px; padding: 5px 9px;
+  font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text);
+  display: none; z-index: 9999; backdrop-filter: blur(6px);
+}
+
+/* ITU badge row */
+.itu-info {
+  margin-top: 6px; padding: 6px 8px;
+  background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.18);
+  border-radius: 4px; font-family: 'Space Mono', monospace;
+  font-size: 0.58rem; color: var(--acc); line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════ -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">🔊</div>
+    <div>
+      <span class="logo-name">ASH Room Designer</span>
+      <span class="logo-sub">Spatial Audio · 3D Layout · SOFA · BRIR Export</span>
+    </div>
+  </div>
+  <div class="h-sep"></div>
+  <div class="h-tabs">
+    <button class="h-tab active" onclick="setTab('design')">Design</button>
+    <button class="h-tab" onclick="setTab('sofa')">SOFA / HRTF</button>
+    <button class="h-tab" onclick="setTab('eqapo')">EQ APO</button>
+    <button class="h-tab" onclick="setTab('info')">Info</button>
+  </div>
+  <div class="h-right">
+    <div class="status-pill" onclick="connectBackend()" title="Click to connect to Python backend">
+      <span class="status-led" id="led"></span>
+      <span id="backendTxt">Backend: Offline</span>
+    </div>
+    <button class="btn danger" onclick="resetScene()">Reset</button>
+    <button class="btn primary" onclick="exportJSON()">⬇ Export JSON</button>
+  </div>
+</header>
+
+<!-- ═══ WORKSPACE ═══════════════════════════════════════════ -->
+<div class="workspace">
+
+  <!-- ─── LEFT PANEL ─────────────────────────────────────── -->
+  <div class="panel panel-l">
+
+    <!-- Room -->
+    <div class="pane">
+      <div class="pane-title">Room Dimensions</div>
+      <div class="dims-grid">
+        <div class="dim-field">
+          <div class="dim-label">Width (m)</div>
+          <input class="dim-input" type="number" id="rW" value="5" min="2" max="50" step="0.5" onchange="updateRoom()">
+        </div>
+        <div class="dim-field">
+          <div class="dim-label">Depth (m)</div>
+          <input class="dim-input" type="number" id="rD" value="7" min="2" max="50" step="0.5" onchange="updateRoom()">
+        </div>
+        <div class="dim-field">
+          <div class="dim-label">Height (m)</div>
+          <input class="dim-input" type="number" id="rH" value="2.8" min="2" max="12" step="0.1" onchange="updateRoom()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="pane">
+      <div class="pane-title">Room Presets</div>
+      <div class="preset-row">
+        <button class="preset" onclick="loadPreset('hometheater')">
+          <span class="preset-ico">🏠</span>Home Theater
+        </button>
+        <button class="preset" onclick="loadPreset('cinema')">
+          <span class="preset-ico">🎬</span>Cinema
+        </button>
+        <button class="preset" onclick="loadPreset('studio')">
+          <span class="preset-ico">🎛️</span>Studio
+        </button>
+        <button class="preset" onclick="loadPreset('concert')">
+          <span class="preset-ico">🎵</span>Concert Hall
+        </button>
+      </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="pane">
+      <div class="pane-title">Speaker Layout</div>
+      <div class="layout-chips">
+        <button class="chip" id="lc-stereo"  onclick="setLayout('stereo')">2.0</button>
+        <button class="chip" id="lc-51"      onclick="setLayout('5.1')">5.1</button>
+        <button class="chip" id="lc-71"      onclick="setLayout('7.1')">7.1</button>
+        <button class="chip active" id="lc-714" onclick="setLayout('7.1.4')">7.1.4 Atmos</button>
+      </div>
+      <div class="itu-info" id="ituInfo">
+        ITU-R BS.2051-3 · 7.1.4<br>
+        L/R ±30° · C 0° · LFE · LS/RS ±110°<br>
+        LB/RB ±135° · LTF/RTF ±45° /+45°el<br>
+        LTR/RTR ±135° /+45°el
+      </div>
+    </div>
+
+    <!-- Speakers -->
+    <div class="pane" style="flex:1">
+      <div class="pane-title">Speakers <span id="spkBadge" style="color:var(--acc);font-size:0.65rem;"></span></div>
+      <div class="spk-list" id="spkList"></div>
+    </div>
+
+    <!-- SOFA -->
+    <div class="pane">
+      <div class="pane-title">SOFA / HRTF Import</div>
+      <div class="sofa-zone" onclick="document.getElementById('sofaFile').click()">
+        <span class="ico">📂</span>
+        Drop / click for .sofa or _positions.json
+      </div>
+      <input type="file" id="sofaFile" accept=".sofa,.json" style="display:none" onchange="loadSOFA(this)">
+      <div class="sofa-loaded" id="sofaLoaded"></div>
+    </div>
+
+  </div>
+
+  <!-- ─── VIEWPORT ────────────────────────────────────────── -->
+  <div class="viewport">
+    <canvas id="c"></canvas>
+
+    <div class="vp-info">
+      <div class="vp-badge">Layout: <b id="layoutLabel">7.1.4 Atmos</b></div>
+      <div class="vp-badge">Sel: <b id="selLabel">—</b></div>
+      <div class="vp-badge" id="roomLabel">Room: <b>5×7×2.8m</b></div>
+    </div>
+
+    <div class="sel-pop" id="selPop">
+      <div class="sel-pop-title" id="selTitle">—</div>
+      <div class="sel-xyz">
+        <label>X</label><input type="number" id="sX" step="0.05" onchange="applySelPos()">
+        <label>Y</label><input type="number" id="sY" step="0.05" onchange="applySelPos()">
+        <label>Z</label><input type="number" id="sZ" step="0.05" onchange="applySelPos()">
+      </div>
+      <div class="sel-stats">
+        <div class="sel-stat"><div class="k">Azimuth</div><div class="v" id="sAz">0°</div></div>
+        <div class="sel-stat"><div class="k">Elevation</div><div class="v" id="sEl">0°</div></div>
+        <div class="sel-stat"><div class="k">Distance</div><div class="v" id="sDist">0m</div></div>
+        <div class="sel-stat"><div class="k">Height</div><div class="v" id="sHt">0m</div></div>
+      </div>
+    </div>
+
+    <div class="vp-cam">
+      <button class="cam-btn" title="Top view"   onclick="camView('top')">⊤</button>
+      <button class="cam-btn" title="Front view"  onclick="camView('front')">▣</button>
+      <button class="cam-btn" title="Side view"   onclick="camView('side')">◧</button>
+      <button class="cam-btn" title="Perspective" onclick="camView('persp')">◈</button>
+    </div>
+
+    <div class="vp-hint">Orbit: LMB · Pan: RMB · Zoom: Scroll · Select/Drag: Click object</div>
+  </div>
+
+  <!-- ─── RIGHT PANEL ─────────────────────────────────────── -->
+  <div class="panel panel-r">
+
+    <!-- Acoustic Space -->
+    <div class="pane">
+      <div class="pane-title">Acoustic Environment</div>
+      <div class="param">
+        <label>Space / Room Type</label>
+        <select id="pSpace">
+          <option>Listening Room A</option>
+          <option>Listening Room B</option>
+          <option>Listening Room C</option>
+          <option>Living Room</option>
+          <option>Small Room A</option>
+          <option>Control Room</option>
+          <option>Cinema</option>
+          <option>Concert Hall A</option>
+          <option>Studio A</option>
+          <option>Audio Lab A</option>
+          <option>Recording Studio A</option>
+          <option>Seminar Room A</option>
+          <option>Hall A</option>
+          <option>Auditorium A</option>
+          <option>Small Theatre</option>
+          <option>Treated Room</option>
+        </select>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-head">
+          <span>Direct Sound Gain</span>
+          <span class="val" id="gainVal">0 dB</span>
+        </div>
+        <input type="range" id="pGain" min="-10" max="10" step="1" value="0"
+               oninput="document.getElementById('gainVal').textContent=this.value+' dB'">
+      </div>
+    </div>
+
+    <!-- Listener -->
+    <div class="pane">
+      <div class="pane-title">Listener / HRTF</div>
+      <div class="param">
+        <label>Listener Type</label>
+        <select id="pListenerType" onchange="onListenerTypeChange()">
+          <option value="Dummy Head">Dummy Head / HATS</option>
+          <option value="Human Listener">Human Listener</option>
+          <option value="User SOFA Input">User SOFA (loaded above)</option>
+        </select>
+      </div>
+      <div class="param">
+        <label>HRTF Dataset</label>
+        <select id="pDataset">
+          <optgroup label="Dummy Heads">
+            <option>KEMAR</option>
+            <option>KU 100</option>
+            <option>HMS II.3</option>
+            <option>FABIAN</option>
+          </optgroup>
+          <optgroup label="Human">
+            <option>CIPIC</option>
+            <option>LISTEN</option>
+            <option>SADIE II</option>
+            <option>ITA</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <!-- Binaural -->
+    <div class="pane">
+      <div class="pane-title">Binaural Parameters</div>
+      <div class="param">
+        <label>Room Target Response</label>
+        <select id="pTarget">
+          <option>Flat</option>
+          <option>Harman Target</option>
+          <option>ASH Target</option>
+          <option>X-Curve (Cinema)</option>
+          <option>B&K Target</option>
+        </select>
+      </div>
+      <div class="param">
+        <label>Headphone Compensation</label>
+        <select id="pHpComp">
+          <option value="over-high">Over-Ear / On-Ear — High</option>
+          <option value="over-low">Over-Ear / On-Ear — Low</option>
+          <option value="iem-high">In-Ear (IEM) — High</option>
+          <option value="iem-low">In-Ear (IEM) — Low</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div class="param">
+        <label>Spatial Resolution</label>
+        <select id="pResolution">
+          <option>Low</option>
+          <option selected>Medium</option>
+          <option>High</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LF -->
+    <div class="pane">
+      <div class="pane-title">Low Frequency Extension</div>
+      <div class="param">
+        <label>LF Response Character</label>
+        <select id="pLF">
+          <option value="A">A — Audio Lab, smooth</option>
+          <option value="B">B — Audio Lab, smooth v2</option>
+          <option value="C">C — Listening Room, natural</option>
+          <option value="D">D — Studio, fast & smooth</option>
+          <option value="E">E — Audio Lab, resonant</option>
+          <option value="H">H — Listening Room, boomy</option>
+        </select>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-head">
+          <span>LF Crossover</span>
+          <span class="val" id="lfXVal">Auto</span>
+        </div>
+        <input type="range" id="pLFX" min="0" max="150" step="10" value="0"
+               oninput="document.getElementById('lfXVal').textContent=this.value==0?'Auto':this.value+'Hz'">
+      </div>
+    </div>
+
+    <!-- EQ -->
+    <div class="pane">
+      <div class="pane-title">Additional EQ</div>
+      <div class="toggle-wrap">
+        <span class="toggle-label">Compensate HP Roll-off (~+4dB@20Hz)</span>
+        <div class="tog" id="togRolloff" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label">Forward-Backward Filtering (no delay)</span>
+        <div class="tog" id="togFwdBwd" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Export settings -->
+    <div class="pane">
+      <div class="pane-title">Export Settings</div>
+      <div class="param">
+        <label>Sample Rate</label>
+        <select id="pSR">
+          <option value="44100">44.1 kHz</option>
+          <option value="48000" selected>48 kHz</option>
+          <option value="96000">96 kHz</option>
+        </select>
+      </div>
+      <div class="param">
+        <label>Bit Depth</label>
+        <select id="pBD">
+          <option value="24" selected>24 bit</option>
+          <option value="32">32 bit</option>
+        </select>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label">Export SOFA file</span>
+        <div class="tog on" id="togSOFA" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label">Export direction WAV BRIRs</span>
+        <div class="tog on" id="togWAV" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label">Auto-write EQ APO config</span>
+        <div class="tog on" id="togEQAPO" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="pane" style="flex:1; padding:0;">
+      <div style="padding:8px 14px 4px; border-bottom:1px solid var(--border);">
+        <div class="pane-title" style="margin:0;">Log</div>
+      </div>
+      <div class="log" id="logBox">
+        <div class="log-line i">[ASH Room Designer ready]</div>
+        <div class="log-line">[Preset: Home Theater 7.1.4 loaded]</div>
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <div class="process-area">
+      <div class="prog-bar" id="progBar"><div class="prog-fill" id="progFill"></div></div>
+      <button class="gen-btn" onclick="generate()">▶ Generate BRIR / SOFA via ASH</button>
+      <button class="exp-btn" onclick="exportJSON()">⬇ Export Room Config JSON</button>
+    </div>
+
+  </div>
+</div>
+
+<div id="tt"></div>
+
+<!-- THREE.JS r128 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let scene, camera, renderer, clock;
+let roomMeshes = [];
+let speakerMeshes  = {};   // ch → THREE.Group
+let lineObjects    = {};   // ch → THREE.Line
+let listenerMesh   = null;
+let sofaViz        = null;
+
+let room = { w:5, d:7, h:2.8 };
+let currentLayout = '7.1.4';
+let selectedMesh  = null;
+
+// Orbit/pan state
+let orbitCenter   = new THREE.Vector3(0, 1.2, 0);
+let orbitActive   = false, orbitLast   = null;
+let panActive     = false, panLast     = null;
+let dragActive    = false, dragObj     = null;
+
+// Backend
+let backendUrl    = 'http://localhost:8765';
+let backendOnline = false;
+
+// ─── ITU-R BS.2051 standard angles ────────────────────────────────
+const ITU_ANGLES = {
+  stereo: { L:[-30,0], R:[30,0] },
+  '5.1':  { L:[-30,0], R:[30,0], C:[0,0], LFE:[-45,-15], LS:[-110,0], RS:[110,0] },
+  '7.1':  { L:[-30,0], R:[30,0], C:[0,0], LFE:[-45,-15], LS:[-110,0], RS:[110,0], LB:[-135,0], RB:[135,0] },
+  '7.1.4':{ L:[-30,0], R:[30,0], C:[0,0], LFE:[-45,-15], LS:[-110,0], RS:[110,0], LB:[-135,0], RB:[135,0],
+             LTF:[-45,45], RTF:[45,45], LTR:[-135,45], RTR:[135,45] }
+};
+
+const LAYOUTS = {
+  stereo:  ['L','R'],
+  '5.1':   ['L','R','C','LFE','LS','RS'],
+  '7.1':   ['L','R','C','LFE','LS','RS','LB','RB'],
+  '7.1.4': ['L','R','C','LFE','LS','RS','LB','RB','LTF','RTF','LTR','RTR']
+};
+
+const CH_NAMES = {
+  L:'Left', R:'Right', C:'Center', LFE:'Subwoofer',
+  LS:'Left Surround', RS:'Right Surround',
+  LB:'Left Back', RB:'Right Back',
+  LTF:'Left Top Front', RTF:'Right Top Front',
+  LTR:'Left Top Rear',  RTR:'Right Top Rear'
+};
+
+const CH_COLORS = {
+  L:0x00d4ff, R:0x00d4ff, C:0xffffff, LFE:0xff5722,
+  LS:0xa855f7, RS:0xa855f7, LB:0x6366f1, RB:0x6366f1,
+  LTF:0x10b981, RTF:0x10b981, LTR:0x059669, RTR:0x059669
+};
+
+const ITU_INFO = {
+  stereo:  '2.0 Stereo · L/R ±30°',
+  '5.1':   '5.1 · L/R ±30° · LS/RS ±110°',
+  '7.1':   '7.1 · + LB/RB ±135°',
+  '7.1.4': 'ITU-R BS.2051-3 · 7.1.4 Atmos\nL/R ±30° · LS/RS ±110° · LB/RB ±135°\nLTF/RTF ±45°/+45°el · LTR/RTR ±135°/+45°el'
+};
+
+// ─── Speaker position from ITU angle + room ────────────────────────
+function speakerPosFromAngle(ch) {
+  const angles = (ITU_ANGLES[currentLayout] || {})[ch] || [0,0];
+  const [az, el] = angles;
+  const azR = az * Math.PI/180;
+  const elR = el * Math.PI/180;
+
+  // Distance heuristic: use min room dimension scaled
+  const minDim = Math.min(room.w, room.d) * 0.42;
+  const r = (ch === 'LFE') ? minDim * 0.55 : minDim;
+
+  const lp = listenerMesh ? listenerMesh.position : new THREE.Vector3(0, 0, 0);
+
+  const x = lp.x + r * Math.cos(elR) * Math.sin(azR);
+  const y = Math.max(0.15, lp.y + 1.1 + r * Math.sin(elR));  // ear height + elevation
+  const z = lp.z - r * Math.cos(elR) * Math.cos(azR);
+
+  // Clamp to room
+  return new THREE.Vector3(
+    Math.max(-room.w/2+0.25, Math.min(room.w/2-0.25, x)),
+    Math.max(0.15, Math.min(room.h-0.15, y)),
+    Math.max(-room.d/2+0.25, Math.min(room.d/2-0.25, z))
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+function init() {
+  const canvas = document.getElementById('c');
+  clock = new THREE.Clock();
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x060910);
+  scene.fog = new THREE.FogExp2(0x060910, 0.015);
+
+  const vp = canvas.parentElement;
+  camera = new THREE.PerspectiveCamera(52, vp.clientWidth / vp.clientHeight, 0.05, 300);
+  camera.position.set(0, 5, 12);
+  camera.lookAt(orbitCenter);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference:'high-performance' });
+  renderer.setSize(vp.clientWidth, vp.clientHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0x1a2440, 3));
+  scene.add(new THREE.HemisphereLight(0x002244, 0x110011, 1));
+  const sunLight = new THREE.DirectionalLight(0x405080, 0.8);
+  sunLight.position.set(5,10,5);
+  sunLight.castShadow = true;
+  scene.add(sunLight);
+
+  // Raycaster
+  const ra = new THREE.Raycaster();
+  const mo = new THREE.Vector2();
+
+  canvas.addEventListener('mousedown', e => onDown(e, ra, mo, canvas));
+  canvas.addEventListener('mousemove', e => onMove(e, ra, mo, canvas));
+  canvas.addEventListener('mouseup',   () => onUp());
+  canvas.addEventListener('wheel',     e => onWheel(e));
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('resize',    onResize);
+
+  loadPreset('hometheater');
+  requestAnimationFrame(animate);
+  log('Scene ready · Home Theater 7.1.4 preset loaded', 'ok');
+
+  setTimeout(() => connectBackend(), 800);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SCENE BUILDING
+// ═══════════════════════════════════════════════════════════════════
+function buildRoom() {
+  roomMeshes.forEach(m => scene.remove(m));
+  roomMeshes = [];
+
+  const { w, d, h } = room;
+
+  // Floor
+  const floorM = new THREE.MeshLambertMaterial({ color:0x080e1a });
+  const floor  = new THREE.Mesh(new THREE.PlaneGeometry(w, d), floorM);
+  floor.rotation.x = -Math.PI/2; floor.receiveShadow = true;
+  scene.add(floor); roomMeshes.push(floor);
+
+  // Grid
+  const grid = new THREE.GridHelper(Math.max(w,d)+2, 16, 0x0d1e35, 0x0a1828);
+  grid.position.y = 0.005;
+  scene.add(grid); roomMeshes.push(grid);
+
+  // Room wireframe box
+  const boxEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d));
+  const wireMat  = new THREE.LineBasicMaterial({ color:0x1a3050, transparent:true, opacity:0.55 });
+  const wire     = new THREE.LineSegments(boxEdges, wireMat);
+  wire.position.y = h/2;
+  scene.add(wire); roomMeshes.push(wire);
+
+  // Wall planes (subtle)
+  const wallMat = new THREE.MeshLambertMaterial({ color:0x0a1020, transparent:true, opacity:0.25, side:THREE.BackSide });
+  const wallBox = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+  wallBox.position.y = h/2;
+  scene.add(wallBox); roomMeshes.push(wallBox);
+
+  // Screen wall (front = -z)
+  const sW = w * 0.75, sH = Math.min(sW * 0.45, h * 0.6);
+  const screenMat = new THREE.MeshLambertMaterial({ color:0x050a14, emissive:0x001133, emissiveIntensity:0.4 });
+  const screen    = new THREE.Mesh(new THREE.PlaneGeometry(sW, sH), screenMat);
+  screen.position.set(0, h * 0.45, -d/2 + 0.02);
+  screen.userData.label = 'Screen';
+  scene.add(screen); roomMeshes.push(screen);
+
+  // Screen edge glow
+  const sEdge  = new THREE.EdgesGeometry(new THREE.PlaneGeometry(sW+0.05, sH+0.05));
+  const sEMat  = new THREE.LineBasicMaterial({ color:0x003366 });
+  const sEdgeL = new THREE.LineSegments(sEdge, sEMat);
+  sEdgeL.position.copy(screen.position); sEdgeL.position.z += 0.01;
+  scene.add(sEdgeL); roomMeshes.push(sEdgeL);
+
+  // Furniture: couch + seats
+  buildFurniture();
+
+  // Update badges
+  document.getElementById('roomLabel').innerHTML =
+    `Room: <b>${w}×${d}×${h}m</b>`;
+}
+
+function buildFurniture() {
+  const { w, d } = room;
+
+  // Couch (listener position, z forward = positive)
+  const couchMat = new THREE.MeshLambertMaterial({ color:0x1a1030 });
+  const couch    = new THREE.Mesh(new THREE.BoxGeometry(w*0.45, 0.45, 0.85), couchMat);
+  const cz       = d * 0.18;
+  couch.position.set(0, 0.225, cz);
+  scene.add(couch); roomMeshes.push(couch);
+
+  const backMat = new THREE.MeshLambertMaterial({ color:0x231540 });
+  const back    = new THREE.Mesh(new THREE.BoxGeometry(w*0.45, 0.55, 0.12), backMat);
+  back.position.set(0, 0.55, cz + 0.42);
+  scene.add(back); roomMeshes.push(back);
+
+  // Small side tables
+  for (const sx of [-w*0.27, w*0.27]) {
+    const tbl = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.46, 0.35),
+      new THREE.MeshLambertMaterial({ color:0x120c28 }));
+    tbl.position.set(sx, 0.23, cz);
+    scene.add(tbl); roomMeshes.push(tbl);
+  }
+}
+
+function buildListener() {
+  if (listenerMesh) scene.remove(listenerMesh);
+  const g = new THREE.Group();
+  const mat = { color:0xf0c090 };
+
+  // Torso
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.24,0.55,8),
+    new THREE.MeshLambertMaterial(mat));
+  t.position.y = 1.1; g.add(t);
+
+  // Neck
+  const n = new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.1,0.15,8),
+    new THREE.MeshLambertMaterial(mat));
+  n.position.y = 1.45; g.add(n);
+
+  // Head
+  const h = new THREE.Mesh(new THREE.SphereGeometry(0.135,16,12),
+    new THREE.MeshLambertMaterial({ color:0xf5d5a5 }));
+  h.position.y = 1.65; g.add(h);
+
+  // Ears
+  const eMat = new THREE.MeshLambertMaterial({ color:0xe5b880 });
+  const eGeo = new THREE.SphereGeometry(0.045,8,6);
+  const eL = new THREE.Mesh(eGeo, eMat); eL.position.set(-0.15, 1.65, 0); eL.scale.set(0.5,1,1); g.add(eL);
+  const eR = new THREE.Mesh(eGeo, eMat); eR.position.set( 0.15, 1.65, 0); eR.scale.set(0.5,1,1); g.add(eR);
+
+  // Headphones
+  const hpMat = new THREE.MeshLambertMaterial({ color:0x111122 });
+  const band  = new THREE.Mesh(new THREE.TorusGeometry(0.145,0.018,6,20,Math.PI), hpMat);
+  band.position.y = 1.74; band.rotation.z = Math.PI/2; g.add(band);
+  const cupL = new THREE.Mesh(new THREE.SphereGeometry(0.07,8,8,0,Math.PI*2,0,Math.PI/2), hpMat);
+  cupL.position.set(-0.165,1.65,0); cupL.rotation.z = -Math.PI/2; g.add(cupL);
+  const cupR = new THREE.Mesh(new THREE.SphereGeometry(0.07,8,8,0,Math.PI*2,0,Math.PI/2), hpMat);
+  cupR.position.set( 0.165,1.65,0); cupR.rotation.z =  Math.PI/2; g.add(cupR);
+
+  // Glow ring on floor
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.28,0.015,8,32),
+    new THREE.MeshBasicMaterial({ color:0xff5722, transparent:true, opacity:0.55 })
+  );
+  ring.rotation.x = Math.PI/2; ring.position.y = 0.02; g.add(ring);
+
+  // Seat the listener on the couch
+  g.position.set(0, 0, room.d * 0.18);
+  g.userData = { type:'listener', label:'Listener (Dummy Head)', draggable:true };
+
+  listenerMesh = g;
+  scene.add(g);
+}
+
+function buildSpeaker(ch) {
+  if (speakerMeshes[ch]) { scene.remove(speakerMeshes[ch]); delete speakerMeshes[ch]; }
+
+  const col  = CH_COLORS[ch] || 0x00d4ff;
+  const isSub = ch === 'LFE';
+  const isTop = ch.startsWith('LT') || ch.startsWith('RT');
+  const g = new THREE.Group();
+
+  const cW = isSub ? 0.35 : 0.18;
+  const cH = isSub ? 0.42 : (isTop ? 0.18 : 0.28);
+  const cD = isSub ? 0.32 : 0.14;
+
+  // Cabinet
+  const cab = new THREE.Mesh(
+    new THREE.BoxGeometry(cW, cH, cD),
+    new THREE.MeshLambertMaterial({ color:0x0d1220 })
+  );
+  g.add(cab);
+
+  // Driver
+  const drv = new THREE.Mesh(
+    new THREE.CircleGeometry(cW*0.3, 16),
+    new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.85 })
+  );
+  drv.position.z = cD/2 + 0.003; g.add(drv);
+
+  // Glow disc
+  const glow = new THREE.Mesh(
+    new THREE.CircleGeometry(cW*0.55, 16),
+    new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.1, side:THREE.DoubleSide })
+  );
+  glow.position.z = cD/2 + 0.006; g.add(glow);
+
+  // Point light
+  const pl = new THREE.PointLight(col, 0.3, 3.5);
+  pl.position.set(0, 0, 0.25); g.add(pl);
+
+  // Label
+  const lCanvas = document.createElement('canvas');
+  lCanvas.width = 128; lCanvas.height = 48;
+  const lCtx = lCanvas.getContext('2d');
+  lCtx.fillStyle = '#' + col.toString(16).padStart(6,'0');
+  lCtx.font = 'bold 28px monospace';
+  lCtx.textAlign = 'center';
+  lCtx.fillText(ch, 64, 36);
+  const lSprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lCanvas), transparent:true })
+  );
+  lSprite.scale.set(0.55, 0.2, 1);
+  lSprite.position.y = cH/2 + 0.18;
+  g.add(lSprite);
+
+  // Place
+  const pos = speakerPosFromAngle(ch);
+  g.position.copy(pos);
+
+  // Face listener
+  if (listenerMesh) {
+    const ear = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
+    g.lookAt(ear);
+  }
+
+  g.userData = { type:'speaker', channel:ch, label:`${ch} — ${CH_NAMES[ch]||ch}`, draggable:true, col };
+  speakerMeshes[ch] = g;
+  scene.add(g);
+
+  updateLine(ch);
+}
+
+function updateLine(ch) {
+  if (lineObjects[ch]) { scene.remove(lineObjects[ch]); delete lineObjects[ch]; }
+  if (!speakerMeshes[ch] || !listenerMesh) return;
+
+  const sp = speakerMeshes[ch].position;
+  const lp = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
+  const geo = new THREE.BufferGeometry().setFromPoints([sp.clone(), lp]);
+  const col = CH_COLORS[ch] || 0x00d4ff;
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color:col, transparent:true, opacity:0.14 }));
+  lineObjects[ch] = line;
+  scene.add(line);
+}
+
+function setLayout(layout) {
+  // Clear old speakers
+  Object.keys(speakerMeshes).forEach(ch => {
+    scene.remove(speakerMeshes[ch]); delete speakerMeshes[ch];
+  });
+  Object.keys(lineObjects).forEach(ch => {
+    scene.remove(lineObjects[ch]); delete lineObjects[ch];
+  });
+
+  currentLayout = layout;
+  document.querySelectorAll('[id^=lc-]').forEach(b => b.classList.remove('active'));
+  document.getElementById('lc-' + layout.replace(/\./g,''))?.classList.add('active');
+  document.getElementById('layoutLabel').textContent = layout + (layout==='7.1.4'?' Atmos':'');
+  document.getElementById('ituInfo').textContent = (ITU_INFO[layout]||'');
+
+  LAYOUTS[layout].forEach(ch => buildSpeaker(ch));
+  updateSpeakerList();
+  log(`Layout: ${layout} (${LAYOUTS[layout].length} channels)`, 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PRESETS
+// ═══════════════════════════════════════════════════════════════════
+const PRESETS = {
+  hometheater: {
+    room:{w:5,d:7,h:2.8}, layout:'7.1.4',
+    ash:{ space:'Listening Room A', target:'Harman Target', dataset:'KEMAR' }
+  },
+  cinema: {
+    room:{w:22,d:16,h:8}, layout:'7.1.4',
+    ash:{ space:'Cinema', target:'X-Curve (Cinema)', dataset:'KU 100' }
+  },
+  studio: {
+    room:{w:8,d:6.5,h:3.1}, layout:'5.1',
+    ash:{ space:'Control Room', target:'Flat', dataset:'KEMAR' }
+  },
+  concert: {
+    room:{w:40,d:32,h:16}, layout:'7.1',
+    ash:{ space:'Concert Hall A', target:'ASH Target', dataset:'FABIAN' }
+  }
+};
+
+function loadPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  room = { ...p.room };
+  document.getElementById('rW').value = room.w;
+  document.getElementById('rD').value = room.d;
+  document.getElementById('rH').value = room.h;
+  buildRoom();
+  buildListener();
+  setLayout(p.layout);
+  if (p.ash.space)   document.getElementById('pSpace').value   = p.ash.space;
+  if (p.ash.target)  document.getElementById('pTarget').value  = p.ash.target;
+  if (p.ash.dataset) document.getElementById('pDataset').value = p.ash.dataset;
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.preset[onclick*="${name}"]`)?.classList.add('active');
+  camView('persp');
+  log(`Preset loaded: ${name}`, 'ok');
+}
+
+function updateRoom() {
+  room.w = parseFloat(document.getElementById('rW').value)||5;
+  room.d = parseFloat(document.getElementById('rD').value)||7;
+  room.h = parseFloat(document.getElementById('rH').value)||2.8;
+  buildRoom();
+  buildListener();
+  // Rebuild speakers at new positions
+  const l = currentLayout;
+  Object.keys(speakerMeshes).forEach(ch => { scene.remove(speakerMeshes[ch]); delete speakerMeshes[ch]; });
+  Object.keys(lineObjects).forEach(ch => { scene.remove(lineObjects[ch]); delete lineObjects[ch]; });
+  LAYOUTS[l].forEach(ch => buildSpeaker(ch));
+  updateSpeakerList();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INTERACTION
+// ═══════════════════════════════════════════════════════════════════
+function getPickable() {
+  const objs = [];
+  Object.values(speakerMeshes).forEach(g => g.traverse(c => { if(c.isMesh) objs.push(c); }));
+  if (listenerMesh) listenerMesh.traverse(c => { if(c.isMesh) objs.push(c); });
+  return objs;
+}
+
+function onDown(e, ra, mo, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  mo.x =  ((e.clientX-rect.left)/rect.width )*2-1;
+  mo.y = -((e.clientY-rect.top )/rect.height)*2+1;
+  ra.setFromCamera(mo, camera);
+  const hits = ra.intersectObjects(getPickable(), true);
+
+  if (e.button === 0) {
+    if (hits.length) {
+      let obj = hits[0].object;
+      while (obj && !obj.userData.draggable) obj = obj.parent;
+      if (obj?.userData.draggable) {
+        dragActive = true; dragObj = obj;
+        selectObj(obj); return;
+      }
+    }
+    orbitActive = true; orbitLast = {x:e.clientX, y:e.clientY};
+    selectObj(null);
+  } else if (e.button === 2 || e.button === 1) {
+    panActive = true; panLast = {x:e.clientX, y:e.clientY};
+  }
+}
+
+function onMove(e, ra, mo, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  mo.x =  ((e.clientX-rect.left)/rect.width )*2-1;
+  mo.y = -((e.clientY-rect.top )/rect.height)*2+1;
+  ra.setFromCamera(mo, camera);
+
+  // Tooltip
+  const tt = document.getElementById('tt');
+  const hits = ra.intersectObjects(getPickable(), true);
+  if (hits.length) {
+    let obj = hits[0].object;
+    while(obj && !obj.userData.type) obj = obj.parent;
+    if (obj?.userData.label) {
+      tt.style.display='block';
+      tt.style.left=(e.clientX+14)+'px';
+      tt.style.top =(e.clientY- 8)+'px';
+      tt.textContent = obj.userData.label;
+      canvas.style.cursor = 'grab';
+    } else { tt.style.display='none'; canvas.style.cursor=''; }
+  } else { tt.style.display='none'; canvas.style.cursor=''; }
+
+  if (dragActive && dragObj) {
+    canvas.style.cursor = 'grabbing';
+    const planeY = dragObj.position.y;
+    const plane  = new THREE.Plane(new THREE.Vector3(0,1,0), -planeY);
+    const hit    = new THREE.Vector3();
+    ra.ray.intersectPlane(plane, hit);
+    if (hit) {
+      dragObj.position.x = Math.max(-room.w/2+0.2, Math.min(room.w/2-0.2, hit.x));
+      dragObj.position.z = Math.max(-room.d/2+0.2, Math.min(room.d/2-0.2, hit.z));
+      if (dragObj.userData.type === 'speaker' && listenerMesh) {
+        const ear = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
+        dragObj.lookAt(ear);
+        updateLine(dragObj.userData.channel);
+      }
+      if (dragObj === listenerMesh) {
+        Object.keys(speakerMeshes).forEach(ch => {
+          const ear = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
+          speakerMeshes[ch].lookAt(ear);
+          updateLine(ch);
+        });
+      }
+      updateSelectionPanel(dragObj);
+      updateSpeakerList();
+    }
+  } else if (orbitActive && orbitLast) {
+    const dx = e.clientX - orbitLast.x;
+    const dy = e.clientY - orbitLast.y;
+    orbitLast = {x:e.clientX, y:e.clientY};
+    const sph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(orbitCenter));
+    sph.theta -= dx * 0.007;
+    sph.phi   -= dy * 0.007;
+    sph.phi    = Math.max(0.04, Math.min(Math.PI*0.47, sph.phi));
+    camera.position.copy(new THREE.Vector3().setFromSpherical(sph).add(orbitCenter));
+    camera.lookAt(orbitCenter);
+  } else if (panActive && panLast) {
+    const dx = e.clientX - panLast.x;
+    const dy = e.clientY - panLast.y;
+    panLast = {x:e.clientX, y:e.clientY};
+    const right = new THREE.Vector3().crossVectors(camera.getWorldDirection(new THREE.Vector3()), camera.up).normalize();
+    const spd   = camera.position.distanceTo(orbitCenter) * 0.001;
+    orbitCenter.addScaledVector(right, -dx*spd).addScaledVector(camera.up, dy*spd);
+    camera.position.addScaledVector(right, -dx*spd).addScaledVector(camera.up, dy*spd);
+    camera.lookAt(orbitCenter);
+  }
+}
+
+function onUp() {
+  dragActive = false; dragObj = null;
+  orbitActive = false; panActive = false;
+}
+
+function onWheel(e) {
+  const fac = e.deltaY > 0 ? 1.12 : 0.88;
+  const dir = camera.position.clone().sub(orbitCenter);
+  const dist = Math.max(1.5, Math.min(80, dir.length() * fac));
+  camera.position.copy(orbitCenter).addScaledVector(dir.normalize(), dist);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SELECTION
+// ═══════════════════════════════════════════════════════════════════
+function selectObj(obj) {
+  selectedMesh = obj;
+  const pop = document.getElementById('selPop');
+  if (!obj) { pop.classList.remove('show'); document.getElementById('selLabel').textContent='—'; return; }
+  pop.classList.add('show');
+  document.getElementById('selLabel').textContent = obj.userData.label || '';
+  updateSelectionPanel(obj);
+  document.querySelectorAll('.spk-row').forEach(r => r.classList.remove('sel'));
+  if (obj.userData.channel) {
+    document.querySelector(`[data-ch="${obj.userData.channel}"]`)?.classList.add('sel');
+  }
+}
+
+function updateSelectionPanel(obj) {
+  document.getElementById('selTitle').textContent = obj.userData.label || '';
+  document.getElementById('sX').value = obj.position.x.toFixed(3);
+  document.getElementById('sY').value = obj.position.y.toFixed(3);
+  document.getElementById('sZ').value = obj.position.z.toFixed(3);
+
+  if (listenerMesh) {
+    const ear   = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
+    const delta = obj.position.clone().sub(ear);
+    const dist  = delta.length();
+    const az    = Math.atan2(delta.x, -delta.z) * 180/Math.PI;
+    const el    = dist > 0 ? Math.asin(Math.max(-1,Math.min(1,delta.y/dist))) * 180/Math.PI : 0;
+    document.getElementById('sAz').textContent   = az.toFixed(1)+'°';
+    document.getElementById('sEl').textContent   = el.toFixed(1)+'°';
+    document.getElementById('sDist').textContent = dist.toFixed(2)+'m';
+    document.getElementById('sHt').textContent   = obj.position.y.toFixed(2)+'m';
+  }
+}
+
+function applySelPos() {
+  if (!selectedMesh) return;
+  selectedMesh.position.set(
+    parseFloat(document.getElementById('sX').value)||0,
+    parseFloat(document.getElementById('sY').value)||0,
+    parseFloat(document.getElementById('sZ').value)||0
+  );
+  if (selectedMesh.userData.channel && listenerMesh) {
+    const ear = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
+    selectedMesh.lookAt(ear);
+    updateLine(selectedMesh.userData.channel);
+  }
+  updateSelectionPanel(selectedMesh);
+  updateSpeakerList();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SPEAKER LIST UI
+// ═══════════════════════════════════════════════════════════════════
+function updateSpeakerList() {
+  const channels = LAYOUTS[currentLayout] || [];
+  document.getElementById('spkBadge').textContent = `(${channels.length})`;
+  const ear = listenerMesh ? listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0)) : new THREE.Vector3(0,1.65,0);
+
+  document.getElementById('spkList').innerHTML = channels.map(ch => {
+    const m   = speakerMeshes[ch];
+    const col = '#'+((CH_COLORS[ch]||0x00d4ff).toString(16).padStart(6,'0'));
+    let azStr = '—';
+    if (m) {
+      const d = m.position.clone().sub(ear);
+      const az = Math.atan2(d.x, -d.z) * 180/Math.PI;
+      azStr = (az>=0?'+':'')+az.toFixed(0)+'°';
+    }
+    const isSel = selectedMesh?.userData.channel === ch;
+    return `<div class="spk-row${isSel?' sel':''}" data-ch="${ch}" onclick="pickSpeaker('${ch}')">
+      <div class="spk-led" style="background:${col}"></div>
+      <span class="spk-ch" style="color:${col}">${ch}</span>
+      <span class="spk-name">${CH_NAMES[ch]||ch}</span>
+      <span class="spk-az">${azStr}</span>
+    </div>`;
+  }).join('');
+}
+
+function pickSpeaker(ch) {
+  if (speakerMeshes[ch]) selectObj(speakerMeshes[ch]);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CAMERA
+// ═══════════════════════════════════════════════════════════════════
+function camView(v) {
+  const d = Math.max(room.w, room.d);
+  const targets = {
+    top:  {x:0.01, y:d*1.4, z:0.01},
+    front:{x:0, y:room.h*0.5, z:room.d*1.4},
+    side: {x:room.w*1.4, y:room.h*0.5, z:0},
+    persp:{x:-room.w*0.5, y:room.h*1.5, z:room.d*1.4}
+  };
+  const t = targets[v]; if (!t) return;
+  const start = camera.position.clone();
+  const t0 = clock.getElapsedTime();
+  const go = () => {
+    const p = Math.min((clock.getElapsedTime()-t0)/0.55, 1);
+    const e = 1-Math.pow(1-p,3);
+    camera.position.lerpVectors(start, new THREE.Vector3(t.x,t.y,t.z), e);
+    camera.lookAt(orbitCenter);
+    if (p<1) requestAnimationFrame(go);
+  };
+  go();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SOFA
+// ═══════════════════════════════════════════════════════════════════
+function loadSOFA(input) {
+  const f = input.files[0]; if (!f) return;
+  log(`Loading: ${f.name}`, 'i');
+  const rd = new FileReader();
+  rd.onload = e => {
+    if (f.name.endsWith('.json')) {
+      try {
+        const data = JSON.parse(e.target.result);
+        const positions = data.positions || data.SourcePosition || null;
+        if (positions && Array.isArray(positions)) {
+          visualizeSOFA(positions, f.name);
+        } else { log('No positions[] found in JSON', 'w'); }
+      } catch(err) { log('JSON parse error: '+err.message, 'e'); }
+    } else {
+      // Send to backend
+      sendSOFAToBackend(f);
+    }
+  };
+  rd.readAsText(f);
+}
+
+async function sendSOFAToBackend(file) {
+  try {
+    const fd = new FormData(); fd.append('file', file);
+    const r  = await fetch(backendUrl+'/sofa-positions', { method:'POST', body:fd, signal:AbortSignal.timeout(10000) });
+    if (r.ok) {
+      const d = await r.json();
+      visualizeSOFA(d.positions, file.name, d);
+    } else throw new Error('HTTP '+r.status);
+  } catch(e) {
+    log('SOFA backend error: '+e.message, 'e');
+    log('Tip: python sofa_to_json.py yourfile.sofa → then load the _positions.json', 'w');
+  }
+}
+
+function visualizeSOFA(positions, filename, meta) {
+  if (sofaViz) { scene.remove(sofaViz); sofaViz=null; }
+  const g = new THREE.Group();
+  const geo = new THREE.SphereGeometry(0.06, 6, 6);
+  const mat = new THREE.MeshBasicMaterial({ color:0x10b981, transparent:true, opacity:0.65 });
+
+  const lp = listenerMesh ? listenerMesh.position.clone() : new THREE.Vector3();
+  positions.forEach(pos => {
+    const [az, el, r] = Array.isArray(pos) ? pos : [pos.azimuth||0, pos.elevation||0, pos.radius||2];
+    const azR = az*Math.PI/180, elR = el*Math.PI/180, rd = (r||2)*1.3;
+    const dot = new THREE.Mesh(geo, mat.clone());
+    dot.position.set(
+      lp.x + rd*Math.cos(elR)*Math.sin(azR),
+      lp.y + 1.65 + rd*Math.sin(elR),
+      lp.z - rd*Math.cos(elR)*Math.cos(azR)
+    );
+    g.add(dot);
+  });
+
+  sofaViz = g; scene.add(g);
+  const info = `✓ ${positions.length} HRTF positions – ${filename}`;
+  document.getElementById('sofaLoaded').style.display = 'block';
+  document.getElementById('sofaLoaded').textContent  = info;
+  log(info, 'ok');
+  if (meta?.convention) log(`Convention: ${meta.convention}`, 'i');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BACKEND
+// ═══════════════════════════════════════════════════════════════════
+async function connectBackend() {
+  try {
+    const r = await fetch(backendUrl+'/status', { signal:AbortSignal.timeout(2000) });
+    if (r.ok) {
+      const d = await r.json();
+      setBackend(true, d.ash_available ? 'ASH Ready' : 'No ASH');
+      if (!d.ash_available) log('Backend: set ASH_TOOLSET_PATH env var', 'w');
+    } else throw new Error('HTTP '+r.status);
+  } catch(e) {
+    setBackend(false);
+    log('Backend offline – run: python ash_backend.py', 'w');
+  }
+}
+
+function setBackend(ok, msg='') {
+  backendOnline = ok;
+  document.getElementById('led').className = 'status-led ' + (ok?'on':'err');
+  document.getElementById('backendTxt').textContent = ok ? `Backend: ${msg}` : 'Backend: Offline';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GENERATE + EXPORT
+// ═══════════════════════════════════════════════════════════════════
+function buildConfig() {
+  const spks = {};
+  const ear = listenerMesh ? listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0)) : new THREE.Vector3(0,1.65,0);
+  Object.entries(speakerMeshes).forEach(([ch, m]) => {
+    const d    = m.position.clone().sub(ear);
+    const dist = d.length();
+    const az   = Math.atan2(d.x,-d.z)*180/Math.PI;
+    const el   = dist>0 ? Math.asin(Math.max(-1,Math.min(1,d.y/dist)))*180/Math.PI : 0;
+    spks[ch] = { x:+m.position.x.toFixed(3), y:+m.position.y.toFixed(3), z:+m.position.z.toFixed(3), azimuth:+az.toFixed(1), elevation:+el.toFixed(1), distance:+dist.toFixed(3) };
+  });
+  const lp = listenerMesh?.position;
+  return {
+    room: {...room},
+    layout: currentLayout,
+    listener: lp ? {x:+lp.x.toFixed(3), y:+lp.y.toFixed(3), z:+lp.z.toFixed(3)} : {x:0,y:0,z:0},
+    speakers: spks,
+    ash_params: {
+      acoustic_space:     document.getElementById('pSpace').value,
+      listener_type:      document.getElementById('pListenerType').value,
+      dataset:            document.getElementById('pDataset').value,
+      direct_sound_gain:  +document.getElementById('pGain').value,
+      room_target:        document.getElementById('pTarget').value,
+      headphone_comp:     document.getElementById('pHpComp').value,
+      spatial_resolution: document.getElementById('pResolution').value,
+      lf_response:        document.getElementById('pLF').value,
+      lf_crossover:       +document.getElementById('pLFX').value,
+      hp_rolloff_comp:    document.getElementById('togRolloff').classList.contains('on'),
+      fwd_bwd_filter:     document.getElementById('togFwdBwd').classList.contains('on'),
+      sample_rate:        +document.getElementById('pSR').value,
+      bit_depth:          +document.getElementById('pBD').value,
+      export_sofa:        document.getElementById('togSOFA').classList.contains('on'),
+      export_wav:         document.getElementById('togWAV').classList.contains('on'),
+      write_eqapo:        document.getElementById('togEQAPO').classList.contains('on'),
+    }
+  };
+}
+
+async function generate() {
+  const cfg = buildConfig();
+  log(`Generating: ${currentLayout}, ${Object.keys(cfg.speakers).length} channels…`, 'i');
+  setProgress(true, 10);
+
+  try {
+    const r = await fetch(backendUrl+'/process', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(cfg), signal:AbortSignal.timeout(120000)
+    });
+    setProgress(true, 80);
+    if (r.ok) {
+      const d = await r.json();
+      setProgress(true, 100);
+      log(`✓ Done in ${d.duration_s}s → ${d.output_path}`, 'ok');
+      d.files?.forEach(f => log(`  ${f}`, ''));
+      setTimeout(() => setProgress(false, 0), 1500);
+    } else {
+      const txt = await r.text();
+      throw new Error(txt.slice(0,200));
+    }
+  } catch(e) {
+    setProgress(false, 0);
+    log('Error: '+e.message, 'e');
+    if (!backendOnline) log('→ Start backend: python ash_backend.py', 'w');
+    exportJSON(); // fallback
+  }
+}
+
+function exportJSON() {
+  const cfg  = buildConfig();
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], {type:'application/json'});
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `ash_room_${currentLayout}_${Date.now()}.json`;
+  a.click();
+  log(`Config exported: ${a.download}`, 'ok');
+}
+
+function setProgress(show, pct) {
+  const bar  = document.getElementById('progBar');
+  const fill = document.getElementById('progFill');
+  bar.classList.toggle('show', show);
+  fill.style.width = pct+'%';
+}
+
+function resetScene() {
+  room = {w:5,d:7,h:2.8};
+  document.getElementById('rW').value=room.w;
+  document.getElementById('rD').value=room.d;
+  document.getElementById('rH').value=room.h;
+  buildRoom(); buildListener(); setLayout('7.1.4');
+  log('Scene reset', 'i');
+}
+
+function setTab(t) {
+  document.querySelectorAll('.h-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.h-tab[onclick*="${t}"]`)?.classList.add('active');
+  log(`Tab: ${t}`, '');
+}
+
+function onListenerTypeChange() {
+  const t = document.getElementById('pListenerType').value;
+  log(`Listener: ${t}`, 'i');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════════════════════════════
+function log(msg, type='') {
+  const b   = document.getElementById('logBox');
+  const div = document.createElement('div');
+  div.className   = 'log-line '+type;
+  const ts  = new Date().toLocaleTimeString('de',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  div.textContent = `[${ts}] ${msg}`;
+  b.appendChild(div);
+  b.scrollTop = b.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ANIMATE
+// ═══════════════════════════════════════════════════════════════════
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // Animate speaker glows
+  Object.entries(speakerMeshes).forEach(([ch, g]) => {
+    const col = CH_COLORS[ch] || 0x00d4ff;
+    const isSub = ch==='LFE';
+    const spd = isSub ? 1.0 : 2.2;
+    const off = ch.charCodeAt(0)*0.5;
+    g.traverse(c => {
+      if (c.isMesh && c.material?.transparent && c.geometry.type==='CircleGeometry') {
+        c.material.opacity = 0.07 + 0.06*Math.sin(t*spd+off);
+      }
+    });
+  });
+
+  // Listener ring pulse
+  if (listenerMesh) {
+    listenerMesh.traverse(c => {
+      if (c.isMesh && c.material?.color?.getHex()===0xff5722 && c.material.transparent)
+        c.material.opacity = 0.25 + 0.3*Math.sin(t*1.4);
+    });
+  }
+
+  renderer.render(scene, camera);
+}
+
+function onResize() {
+  const vp = document.querySelector('.viewport');
+  camera.aspect = vp.clientWidth/vp.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(vp.clientWidth, vp.clientHeight);
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
