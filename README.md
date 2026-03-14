@@ -10,7 +10,7 @@ It was built quickly for experimentation and prototyping and comes with no guara
 
 Use at your own risk.
 
-This tool allows you to visually design loudspeaker layouts in a 3D room environment, load SOFA / HRTF datasets, and generate BRIRs and SOFA files using the ASH Toolset backend.
+This tool allows you to visually design loudspeaker layouts in a 3D room environment, load SOFA / HRTF datasets, and generate BRIRs and SOFA files using the ASH Toolset backend. It is not really tested and should only be used as a visual idea. 
 
 ---
 
