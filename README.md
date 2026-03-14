@@ -1,4 +1,4 @@
-# ASH Spatial Room Designer
+# ASH Toolset Spatial Room Designer Prototype
 
 3D Room Layout + BRIR / SOFA Generator
 
