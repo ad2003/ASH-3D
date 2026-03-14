@@ -4,7 +4,7 @@
 
 ⚠️ SUPER PROTOTYPE — Experimental / Vibecoded Tool
 
-This project is an experimental prototype UI for the ASH Toolset (https://github.com/ShanonPearce/ASH-Toolset)
+This project is an experimental prototype UI for the Audio Spatialisation for Headphones Toolset (ASH Toolset) (https://github.com/ShanonPearce/ASH-Toolset)
 
 It was built quickly for experimentation and prototyping and comes with no guarantees, no support, and no stability promises.
 
