@@ -36,6 +36,7 @@ body {
   display: grid;
   grid-template-rows: 46px 1fr;
   grid-template-columns: 1fr;
+  min-height: 0;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ HEADER */
@@ -109,6 +110,8 @@ header {
   display: grid;
   grid-template-columns: 240px 1fr 260px;
   overflow: hidden;
+  height: 100%;          /* ← CRITICAL: fill the remaining body height */
+  min-height: 0;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ PANELS */
@@ -116,8 +119,10 @@ header {
   background: var(--bg2);
   overflow-y: auto;
   display: flex; flex-direction: column;
+  height: 100%;          /* ← CRITICAL: full column height */
+  min-height: 0;
 }
-.panel-l { border-right: 1px solid var(--border); }
+.panel-l { border-right: 1px solid var(--border); overflow-y: hidden; }
 .panel-r { border-left:  1px solid var(--border); }
 
 .pane {
@@ -199,7 +204,7 @@ header {
 .sofa-loaded { color: var(--acc4); font-family: 'Space Mono', monospace; font-size: 0.62rem; margin-top: 6px; display: none; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ VIEWPORT */
-.viewport { position: relative; overflow: hidden; background: #060910; }
+.viewport { position: relative; overflow: hidden; background: #060910; min-height: 0; }
 #c { width: 100%; height: 100%; display: block; }
 
 .vp-info { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
@@ -333,6 +338,10 @@ input[type=range]::-webkit-slider-thumb {
 }
 .exp-btn:hover { background: rgba(124,58,237,0.12); }
 
+/* ── Tab content ── */
+.tab-content { display:none; flex-direction:column; flex:1; overflow-y:auto; min-height:0; }
+.tab-content.active { display:flex; }
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -369,8 +378,8 @@ input[type=range]::-webkit-slider-thumb {
   </div>
   <div class="h-sep"></div>
   <div class="h-tabs">
-    <button class="h-tab active" onclick="setTab('design')">Design</button>
-    <button class="h-tab" onclick="setTab('sofa')">SOFA / HRTF</button>
+    <button class="h-tab active" onclick="setTab('design')">3D Layout</button>
+    <button class="h-tab" onclick="setTab('sofa')">HRTF / SOFA</button>
     <button class="h-tab" onclick="setTab('eqapo')">EQ APO</button>
     <button class="h-tab" onclick="setTab('info')">Info</button>
   </div>
@@ -390,79 +399,287 @@ input[type=range]::-webkit-slider-thumb {
   <!-- ─── LEFT PANEL ─────────────────────────────────────── -->
   <div class="panel panel-l">
 
-    <!-- Room -->
-    <div class="pane">
-      <div class="pane-title">Room Dimensions</div>
-      <div class="dims-grid">
-        <div class="dim-field">
-          <div class="dim-label">Width (m)</div>
-          <input class="dim-input" type="number" id="rW" value="5" min="2" max="50" step="0.5" onchange="updateRoom()">
+    <!-- ══ TAB: DESIGN ══════════════════════════════════════ -->
+    <div class="tab-content active" id="tc-design">
+
+      <!-- Room -->
+      <div class="pane">
+        <div class="pane-title">Room Dimensions</div>
+        <div class="dims-grid">
+          <div class="dim-field">
+            <div class="dim-label">Width (m)</div>
+            <input class="dim-input" type="number" id="rW" value="5" min="2" max="50" step="0.5" onchange="updateRoom()">
+          </div>
+          <div class="dim-field">
+            <div class="dim-label">Depth (m)</div>
+            <input class="dim-input" type="number" id="rD" value="7" min="2" max="50" step="0.5" onchange="updateRoom()">
+          </div>
+          <div class="dim-field">
+            <div class="dim-label">Height (m)</div>
+            <input class="dim-input" type="number" id="rH" value="2.8" min="2" max="12" step="0.1" onchange="updateRoom()">
+          </div>
         </div>
-        <div class="dim-field">
-          <div class="dim-label">Depth (m)</div>
-          <input class="dim-input" type="number" id="rD" value="7" min="2" max="50" step="0.5" onchange="updateRoom()">
+      </div>
+
+      <!-- Presets -->
+      <div class="pane">
+        <div class="pane-title">Room Presets</div>
+        <div class="preset-row">
+          <button class="preset" onclick="loadPreset('hometheater')"><span class="preset-ico">🏠</span>Home Theater</button>
+          <button class="preset" onclick="loadPreset('cinema')"><span class="preset-ico">🎬</span>Cinema</button>
+          <button class="preset" onclick="loadPreset('studio')"><span class="preset-ico">🎛️</span>Studio</button>
+          <button class="preset" onclick="loadPreset('concert')"><span class="preset-ico">🎵</span>Concert Hall</button>
         </div>
-        <div class="dim-field">
-          <div class="dim-label">Height (m)</div>
-          <input class="dim-input" type="number" id="rH" value="2.8" min="2" max="12" step="0.1" onchange="updateRoom()">
+      </div>
+
+      <!-- Layout -->
+      <div class="pane">
+        <div class="pane-title">Speaker Layout</div>
+        <div class="layout-chips">
+          <button class="chip" id="lc-stereo"  onclick="setLayout('stereo')">2.0</button>
+          <button class="chip" id="lc-51"      onclick="setLayout('5.1')">5.1</button>
+          <button class="chip" id="lc-71"      onclick="setLayout('7.1')">7.1</button>
+          <button class="chip active" id="lc-714" onclick="setLayout('7.1.4')">7.1.4 Atmos</button>
+        </div>
+        <div class="itu-info" id="ituInfo">
+          ITU-R BS.2051-3 · 7.1.4<br>
+          L/R ±30° · C 0° · LFE · LS/RS ±110°<br>
+          LB/RB ±135° · LTF/RTF ±45°/+45°el · LTR/RTR ±135°/+45°el
         </div>
       </div>
-    </div>
 
-    <!-- Presets -->
-    <div class="pane">
-      <div class="pane-title">Room Presets</div>
-      <div class="preset-row">
-        <button class="preset" onclick="loadPreset('hometheater')">
-          <span class="preset-ico">🏠</span>Home Theater
-        </button>
-        <button class="preset" onclick="loadPreset('cinema')">
-          <span class="preset-ico">🎬</span>Cinema
-        </button>
-        <button class="preset" onclick="loadPreset('studio')">
-          <span class="preset-ico">🎛️</span>Studio
-        </button>
-        <button class="preset" onclick="loadPreset('concert')">
-          <span class="preset-ico">🎵</span>Concert Hall
-        </button>
+      <!-- Speakers -->
+      <div class="pane" style="flex:1">
+        <div class="pane-title">Speakers <span id="spkBadge" style="color:var(--acc);font-size:0.65rem;"></span></div>
+        <div class="spk-list" id="spkList"></div>
       </div>
-    </div>
 
-    <!-- Layout -->
-    <div class="pane">
-      <div class="pane-title">Speaker Layout</div>
-      <div class="layout-chips">
-        <button class="chip" id="lc-stereo"  onclick="setLayout('stereo')">2.0</button>
-        <button class="chip" id="lc-51"      onclick="setLayout('5.1')">5.1</button>
-        <button class="chip" id="lc-71"      onclick="setLayout('7.1')">7.1</button>
-        <button class="chip active" id="lc-714" onclick="setLayout('7.1.4')">7.1.4 Atmos</button>
+      <!-- SOFA quick-import -->
+      <div class="pane">
+        <div class="pane-title">SOFA / HRTF Import</div>
+        <div class="sofa-zone" onclick="document.getElementById('sofaFile').click()">
+          <span class="ico">📂</span>
+          Drop .sofa / _positions.json here or click
+        </div>
+        <input type="file" id="sofaFile" accept=".sofa,.json" style="display:none" onchange="loadSOFA(this)">
+        <div class="sofa-loaded" id="sofaLoaded"></div>
       </div>
-      <div class="itu-info" id="ituInfo">
-        ITU-R BS.2051-3 · 7.1.4<br>
-        L/R ±30° · C 0° · LFE · LS/RS ±110°<br>
-        LB/RB ±135° · LTF/RTF ±45° /+45°el<br>
-        LTR/RTR ±135° /+45°el
+
+    </div><!-- /tc-design -->
+
+    <!-- ══ TAB: SOFA / HRTF ══════════════════════════════════ -->
+    <div class="tab-content" id="tc-sofa">
+
+      <div class="pane">
+        <div class="pane-title">Was ist ein Acoustic Space?</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text2);line-height:1.8;">
+          Ein <span style="color:var(--acc)">Acoustic Space</span> in ASH ist ein<br>
+          verarbeiteter Raumklang aus echten<br>
+          Impulsantwort-Messungen (RIRs).<br><br>
+          Der <span style="color:var(--acc)">HRTF / Listener</span> ist separat —<br>
+          er beschreibt <i>wie der Kopf filtert</i>,<br>
+          nicht wie der Raum klingt.
+        </div>
       </div>
-    </div>
 
-    <!-- Speakers -->
-    <div class="pane" style="flex:1">
-      <div class="pane-title">Speakers <span id="spkBadge" style="color:var(--acc);font-size:0.65rem;"></span></div>
-      <div class="spk-list" id="spkList"></div>
-    </div>
-
-    <!-- SOFA -->
-    <div class="pane">
-      <div class="pane-title">SOFA / HRTF Import</div>
-      <div class="sofa-zone" onclick="document.getElementById('sofaFile').click()">
-        <span class="ico">📂</span>
-        Drop / click for .sofa or _positions.json
+      <div class="pane">
+        <div class="pane-title">Acoustic Space im 3D</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text2);line-height:1.8;margin-bottom:8px;">
+          Lade einen ASH Acoustic Space<br>
+          um dessen IR-Quellpositionen<br>
+          im 3D-Raum zu sehen:
+        </div>
+        <button style="width:100%;background:var(--bg);border:1px solid var(--acc);border-radius:4px;
+          color:var(--acc);font-family:'Space Mono',monospace;font-size:0.62rem;padding:7px;
+          cursor:pointer;" onclick="loadAcousticSpaceViz()">
+          ↺ Acoustic Space visualisieren
+        </button>
+        <div id="acSpaceVizInfo" style="display:none;margin-top:6px;padding:6px 8px;border-radius:4px;
+          background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.18);
+          font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--acc);line-height:1.7;"></div>
       </div>
-      <input type="file" id="sofaFile" accept=".sofa,.json" style="display:none" onchange="loadSOFA(this)">
-      <div class="sofa-loaded" id="sofaLoaded"></div>
-    </div>
 
-  </div>
+      <div class="pane">
+        <div class="pane-title">HRTF / SOFA-Datei laden</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text2);line-height:1.7;margin-bottom:8px;">
+          Eigene SOFA-Datei → wird in ASH<br>
+          <span style="color:var(--acc)">…\data\user\SOFA\</span> gespeichert.<br>
+          Dann unter „User SOFA Input" nutzbar.
+        </div>
+        <div class="sofa-zone" onclick="document.getElementById('sofaFile2').click()">
+          <span class="ico">📤</span>
+          .sofa Datei hochladen
+        </div>
+        <input type="file" id="sofaFile2" accept=".sofa" style="display:none" onchange="uploadSOFAFull(this)">
+        <div id="sofaUploadStatus" style="display:none;margin-top:6px;padding:7px 9px;border-radius:4px;
+          background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);
+          font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--acc4);line-height:1.6;"></div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-title">JSON Positionen (offline)</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text2);line-height:1.7;margin-bottom:8px;">
+          Kein Backend:<br>
+          <span style="color:var(--acc)">python sofa_to_json.py datei.sofa</span>
+        </div>
+        <div class="sofa-zone" onclick="document.getElementById('jsonFile').click()">
+          <span class="ico">📋</span>_positions.json laden
+        </div>
+        <input type="file" id="jsonFile" accept=".json" style="display:none" onchange="loadJSONPositions(this)">
+      </div>
+
+      <div class="pane">
+        <div class="pane-title">User SOFA Dateien</div>
+        <div id="sofaDirList" style="font-family:'Space Mono',monospace;font-size:0.62rem;
+          color:var(--text2);min-height:40px;">
+          Backend verbinden…
+        </div>
+        <button style="margin-top:8px;width:100%;background:transparent;border:1px solid var(--border);
+          border-radius:3px;color:var(--text2);font-family:'Space Mono',monospace;font-size:0.62rem;
+          padding:5px;cursor:pointer;" onclick="refreshSOFAList()">↺ Liste aktualisieren</button>
+      </div>
+
+      <div class="pane" style="flex:1;">
+        <div class="pane-title">Visualisierung</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--text2);line-height:1.7;">
+          <span style="color:var(--acc4)">● grün</span> = HRTF-Messpositionen<br>
+          <span style="color:var(--acc)">● cyan</span>  = Lautsprecher (editierbar)<br><br>
+          <span id="sofaVizStatus">Keine SOFA geladen.</span>
+        </div>
+        <button style="margin-top:8px;width:100%;background:transparent;border:1px solid var(--acc2);
+          border-radius:3px;color:var(--acc2);font-family:'Space Mono',monospace;font-size:0.62rem;
+          padding:5px;cursor:pointer;" onclick="clearSOFAViz()">✕ SOFA-Visualisierung entfernen</button>
+      </div>
+
+    </div><!-- /tc-sofa -->
+
+    <!-- ══ TAB: EQ APO ═══════════════════════════════════════ -->
+    <div class="tab-content" id="tc-eqapo">
+
+      <div class="pane">
+        <div class="pane-title">Equalizer APO Status</div>
+        <div id="eqapoStatusBox" style="font-family:'Space Mono',monospace;font-size:0.62rem;
+          line-height:1.8;color:var(--text2);">
+          Backend verbinden um Status zu laden…
+        </div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-title">Channel Mapping</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text2);
+          margin-bottom:8px;line-height:1.7;">
+          Windows 7.1 Kanal-Reihenfolge:<br>
+          <span style="color:var(--acc);">FL FR C LFE RL RR SBL SBR</span><br>
+          + TFL TFR TBL TBR (Atmos Height)
+        </div>
+        <div id="channelMapTable" style="font-family:'Space Mono',monospace;font-size:0.58rem;
+          color:var(--text2);background:var(--bg);border-radius:4px;padding:8px;
+          border:1px solid var(--border);line-height:2.0;">
+          Layout wählen um Kanalzuordnung zu sehen…
+        </div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-title">EQ APO Preamp Berechnung</div>
+        <div id="preampCalc" style="font-family:'Space Mono',monospace;font-size:0.62rem;
+          color:var(--text2);line-height:1.8;">
+          —
+        </div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-title">Vorschau: config.txt</div>
+        <div id="eqapoPreview" style="font-family:'Space Mono',monospace;font-size:0.56rem;
+          color:var(--text2);background:var(--bg);border:1px solid var(--border);
+          border-radius:4px;padding:8px;max-height:220px;overflow-y:auto;
+          white-space:pre;line-height:1.6;">
+          Konfiguration generieren um Vorschau zu sehen…
+        </div>
+        <button style="margin-top:6px;width:100%;background:transparent;border:1px solid var(--acc);
+          border-radius:3px;color:var(--acc);font-family:'Space Mono',monospace;font-size:0.62rem;
+          padding:5px;cursor:pointer;" onclick="generateEQAPOPreview()">↺ Vorschau generieren</button>
+      </div>
+
+      <div class="pane" style="flex:1">
+        <div class="pane-title">HeSuVi</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--text2);line-height:1.7;">
+          HeSuVi BRIR-Ordner:<br>
+          <span style="color:var(--acc);">…\EqualizerAPO\config\HeSuVi\hrir\</span><br><br>
+          Nach dem Export WAVs + hesuvi_config.txt<br>
+          dorthin kopieren. Dann in HeSuVi unter<br>
+          Virtualisation → Common HRIRs auswählen.
+        </div>
+      </div>
+
+    </div><!-- /tc-eqapo -->
+
+    <!-- ══ TAB: INFO ═════════════════════════════════════════ -->
+    <div class="tab-content" id="tc-info">
+
+      <div class="pane">
+        <div class="pane-title">Tastaturkürzel</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text2);line-height:2.1;">
+          <span style="color:var(--acc);">LMB+Ziehen</span>  Orbit<br>
+          <span style="color:var(--acc);">RMB+Ziehen</span>  Pan<br>
+          <span style="color:var(--acc);">Scroll</span>       Zoom<br>
+          <span style="color:var(--acc);">Klick</span>        Auswählen<br>
+          <span style="color:var(--acc2);">Shift+Drag</span>  Höhe ändern (Y)<br>
+          <span style="color:var(--acc);">Pfeiltasten</span> XZ fein ±5cm<br>
+          <span style="color:var(--acc);">Ctrl+Pfeile</span> XZ fein ±1cm<br>
+          <span style="color:var(--acc);">Shift+↑↓</span>   Y fein ±5cm<br>
+          <span style="color:var(--acc);">Escape</span>      Abwählen<br>
+          <span style="color:var(--acc4);">↺ ITU Snap</span>  Alle auf BS.2051 zurück
+        </div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-title">ITU-R BS.2051-3 Referenz</div>
+        <div id="ituTableFull" style="font-family:'Space Mono',monospace;font-size:0.56rem;
+          color:var(--text2);line-height:2.1;"></div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-title">Workflow</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--text2);line-height:1.9;">
+          <span style="color:var(--acc);">1</span> Raummaße eingeben<br>
+          <span style="color:var(--acc);">2</span> Layout wählen (7.1.4)<br>
+          <span style="color:var(--acc);">3</span> Lautsprecher positionieren<br>
+          <span style="color:var(--acc);">4</span> SOFA laden (optional)<br>
+          <span style="color:var(--acc);">5</span> ASH-Parameter rechts einstellen<br>
+          <span style="color:var(--acc);">6</span> ▶ Generate klicken<br>
+          <span style="color:var(--acc4);">→</span> WAV + SOFA + EQ APO config
+        </div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-title">Backend API</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text2);line-height:1.9;">
+          <span style="color:var(--acc);">GET  /status</span><br>
+          <span style="color:var(--acc);">POST /process</span><br>
+          <span style="color:var(--acc);">POST /sofa-upload</span><br>
+          <span style="color:var(--acc);">POST /sofa-parse</span><br>
+          <span style="color:var(--acc);">GET  /ash-spaces</span><br>
+          <span style="color:var(--acc);">GET  /ash-listeners</span><br>
+          <span style="color:var(--acc);">POST /open-output-folder</span><br>
+          <span style="color:var(--acc);">GET  /latest-session</span><br>
+          <br>
+          <a href="http://localhost:8765/docs" target="_blank"
+             style="color:var(--acc3);">→ Swagger UI öffnen</a>
+        </div>
+      </div>
+
+      <div class="pane" style="flex:1">
+        <div class="pane-title">Letzte Session</div>
+        <div id="lastSessionBox" style="font-family:'Space Mono',monospace;font-size:0.58rem;
+          color:var(--text2);min-height:60px;line-height:1.8;"></div>
+        <button style="margin-top:6px;width:100%;background:transparent;border:1px solid var(--border);
+          border-radius:3px;color:var(--text2);font-family:'Space Mono',monospace;font-size:0.62rem;
+          padding:5px;cursor:pointer;" onclick="loadLastSession()">↺ Letzte Session laden</button>
+      </div>
+
+    </div><!-- /tc-info -->
+
+  </div><!-- /panel-l -->
 
   <!-- ─── VIEWPORT ────────────────────────────────────────── -->
   <div class="viewport">
@@ -496,7 +713,7 @@ input[type=range]::-webkit-slider-thumb {
       <button class="cam-btn" title="Perspective" onclick="camView('persp')">◈</button>
     </div>
 
-    <div class="vp-hint">Orbit: LMB · Pan: RMB · Zoom: Scroll · Select/Drag: Click object</div>
+    <div class="vp-hint">Orbit: LMB · Pan: RMB · Zoom: Scroll · Drag: Bewegen · <b style="color:var(--acc2)">Shift+Drag: Höhe</b> · Pfeiltasten: Feinposition</div>
   </div>
 
   <!-- ─── RIGHT PANEL ─────────────────────────────────────── -->
@@ -663,8 +880,25 @@ input[type=range]::-webkit-slider-thumb {
         <div class="tog on" id="togWAV" onclick="this.classList.toggle('on')"></div>
       </div>
       <div class="toggle-wrap">
+        <span class="toggle-label">Export HeSuVi config</span>
+        <div class="tog" id="togHeSuVi" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label">Export JRiver / Roon manifest</span>
+        <div class="tog" id="togJRiver" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-wrap">
         <span class="toggle-label">Auto-write EQ APO config</span>
         <div class="tog on" id="togEQAPO" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="param" style="margin-top:6px;">
+        <label>EQ APO Channel Config</label>
+        <select id="pEQAPOCh">
+          <option value="7.1">7.1 (standard)</option>
+          <option value="7.1.4">7.1.4 Atmos</option>
+          <option value="5.1">5.1</option>
+          <option value="stereo">Stereo (2.0)</option>
+        </select>
       </div>
     </div>
 
@@ -683,7 +917,11 @@ input[type=range]::-webkit-slider-thumb {
     <div class="process-area">
       <div class="prog-bar" id="progBar"><div class="prog-fill" id="progFill"></div></div>
       <button class="gen-btn" onclick="generate()">▶ Generate BRIR / SOFA via ASH</button>
-      <button class="exp-btn" onclick="exportJSON()">⬇ Export Room Config JSON</button>
+      <div style="display:flex;gap:6px;">
+        <button class="exp-btn" style="flex:1" onclick="exportJSON()">⬇ JSON</button>
+        <button class="exp-btn" style="flex:1;border-color:var(--acc4);color:var(--acc4);" onclick="snapToITU()">↺ ITU Snap</button>
+        <button class="exp-btn" style="flex:1;border-color:var(--text2);color:var(--text2);" onclick="openOutputFolder()">📁</button>
+      </div>
     </div>
 
   </div>
@@ -719,6 +957,7 @@ let dragActive    = false, dragObj     = null;
 // Backend
 let backendUrl    = 'http://localhost:8765';
 let backendOnline = false;
+let backendInfo   = {};
 
 // ─── ITU-R BS.2051 standard angles ────────────────────────────────
 const ITU_ANGLES = {
@@ -757,6 +996,11 @@ const ITU_INFO = {
   '7.1.4': 'ITU-R BS.2051-3 · 7.1.4 Atmos\nL/R ±30° · LS/RS ±110° · LB/RB ±135°\nLTF/RTF ±45°/+45°el · LTR/RTR ±135°/+45°el'
 };
 
+// Azimuth guide rings (one per layout group)
+let azRings = {};
+let heightGuides = {};
+let shiftHeld = false;
+
 // ─── Speaker position from ITU angle + room ────────────────────────
 function speakerPosFromAngle(ch) {
   const angles = (ITU_ANGLES[currentLayout] || {})[ch] || [0,0];
@@ -764,22 +1008,110 @@ function speakerPosFromAngle(ch) {
   const azR = az * Math.PI/180;
   const elR = el * Math.PI/180;
 
-  // Distance heuristic: use min room dimension scaled
   const minDim = Math.min(room.w, room.d) * 0.42;
   const r = (ch === 'LFE') ? minDim * 0.55 : minDim;
 
   const lp = listenerMesh ? listenerMesh.position : new THREE.Vector3(0, 0, 0);
 
   const x = lp.x + r * Math.cos(elR) * Math.sin(azR);
-  const y = Math.max(0.15, lp.y + 1.1 + r * Math.sin(elR));  // ear height + elevation
+  const y = Math.max(0.15, lp.y + 1.1 + r * Math.sin(elR));
   const z = lp.z - r * Math.cos(elR) * Math.cos(azR);
 
-  // Clamp to room
   return new THREE.Vector3(
     Math.max(-room.w/2+0.25, Math.min(room.w/2-0.25, x)),
     Math.max(0.15, Math.min(room.h-0.15, y)),
     Math.max(-room.d/2+0.25, Math.min(room.d/2-0.25, z))
   );
+}
+
+// ─── Build azimuth guide rings centred on listener ─────────────────
+function buildAzRings() {
+  Object.values(azRings).forEach(r => scene.remove(r));
+  azRings = {};
+
+  if (!listenerMesh) return;
+  const lp = listenerMesh.position;
+  const earH = lp.y + 1.65;
+
+  // Floor ring (horizontal plane, ear height)
+  const ringRadii = [
+    { r: Math.min(room.w, room.d)*0.25, col:0x0d2030, dash:false },
+    { r: Math.min(room.w, room.d)*0.40, col:0x0a1a25, dash:true  },
+  ];
+  ringRadii.forEach(({r, col, dash}) => {
+    const segs = 64;
+    const pts  = [];
+    for (let i=0; i<=segs; i++) {
+      const a = (i/segs)*Math.PI*2;
+      pts.push(new THREE.Vector3(lp.x + r*Math.sin(a), earH, lp.z - r*Math.cos(a)));
+    }
+    const geo  = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat  = new THREE.LineBasicMaterial({color:col, transparent:true, opacity:0.4});
+    const ring = new THREE.Line(geo, mat);
+    scene.add(ring);
+    azRings['ring_'+r] = ring;
+  });
+
+  // North/South/East/West direction ticks at ear height
+  const tickR = Math.min(room.w,room.d)*0.42;
+  for (let deg=0; deg<360; deg+=30) {
+    const a   = deg*Math.PI/180;
+    const x0  = lp.x + (tickR-0.12)*Math.sin(a);
+    const z0  = lp.z - (tickR-0.12)*Math.cos(a);
+    const x1  = lp.x + (tickR+0.12)*Math.sin(a);
+    const z1  = lp.z - (tickR+0.12)*Math.cos(a);
+    const pts = [new THREE.Vector3(x0,earH,z0), new THREE.Vector3(x1,earH,z1)];
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const col = (deg===0||deg===180) ? 0x1a4060 : 0x0d2030;
+    const tick = new THREE.Line(geo, new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.6}));
+    scene.add(tick);
+    azRings['tick_'+deg] = tick;
+  }
+
+  // Vertical elevation arc (front plane, 0° / 45° / 90° marks)
+  const arcPts = [];
+  const arcR   = Math.min(room.w,room.d)*0.42;
+  for (let el=-30; el<=90; el+=2) {
+    const elR = el*Math.PI/180;
+    arcPts.push(new THREE.Vector3(lp.x, earH+arcR*Math.sin(elR), lp.z - arcR*Math.cos(elR)));
+  }
+  const arcGeo = new THREE.BufferGeometry().setFromPoints(arcPts);
+  const arc    = new THREE.Line(arcGeo, new THREE.LineBasicMaterial({color:0x0d2030,transparent:true,opacity:0.35}));
+  scene.add(arc);
+  azRings['arc_front'] = arc;
+}
+
+// ─── Height guide plane (shown during shift-drag) ──────────────────
+function showHeightGuide(obj, show) {
+  const key = 'hg_' + (obj?.userData?.channel||'L');
+  if (heightGuides[key]) { scene.remove(heightGuides[key]); delete heightGuides[key]; }
+  if (!show || !obj) return;
+
+  const y   = obj.position.y;
+  const geo = new THREE.PlaneGeometry(room.w*0.9, room.d*0.9);
+  const mat = new THREE.MeshBasicMaterial({
+    color:0x00d4ff, transparent:true, opacity:0.04,
+    side:THREE.DoubleSide
+  });
+  const plane = new THREE.Mesh(geo, mat);
+  plane.rotation.x = Math.PI/2;
+  plane.position.set(0, y, 0);
+  scene.add(plane);
+  heightGuides[key] = plane;
+
+  // Height label
+  const edgePts = [];
+  for(let i=0;i<=32;i++){
+    const a=i/32*Math.PI*2;
+    edgePts.push(new THREE.Vector3(
+      room.w/2*0.88*Math.cos(a), y, room.d/2*0.88*Math.sin(a)
+    ));
+  }
+  const edgeGeo  = new THREE.BufferGeometry().setFromPoints(edgePts);
+  const edgeLine = new THREE.Line(edgeGeo,
+    new THREE.LineBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.25}));
+  scene.add(edgeLine);
+  heightGuides[key+'_edge'] = edgeLine;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -793,13 +1125,17 @@ function init() {
   scene.background = new THREE.Color(0x060910);
   scene.fog = new THREE.FogExp2(0x060910, 0.015);
 
+  // Use window dimensions as fallback if viewport not yet laid out
   const vp = canvas.parentElement;
-  camera = new THREE.PerspectiveCamera(52, vp.clientWidth / vp.clientHeight, 0.05, 300);
+  const vpW = vp.clientWidth  || (window.innerWidth  - 240 - 260);
+  const vpH = vp.clientHeight || (window.innerHeight - 46);
+
+  camera = new THREE.PerspectiveCamera(52, vpW / vpH, 0.05, 300);
   camera.position.set(0, 5, 12);
   camera.lookAt(orbitCenter);
 
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference:'high-performance' });
-  renderer.setSize(vp.clientWidth, vp.clientHeight);
+  renderer.setSize(vpW, vpH);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -823,11 +1159,69 @@ function init() {
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   window.addEventListener('resize',    onResize);
 
+  // Shift key for height-drag mode
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Shift') { shiftHeld = true; updateModeLabel(); }
+    if (e.key === 'Escape') { selectObj(null); }
+    // Arrow keys: fine-tune selected object
+    if (selectedMesh && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+      e.preventDefault();
+      const step = e.ctrlKey ? 0.01 : 0.05;
+      if (!shiftHeld) {
+        if (e.key==='ArrowLeft')  selectedMesh.position.x -= step;
+        if (e.key==='ArrowRight') selectedMesh.position.x += step;
+        if (e.key==='ArrowUp')    selectedMesh.position.z -= step;
+        if (e.key==='ArrowDown')  selectedMesh.position.z += step;
+      } else {
+        if (e.key==='ArrowUp')   selectedMesh.position.y = Math.min(room.h-0.1, selectedMesh.position.y+step);
+        if (e.key==='ArrowDown') selectedMesh.position.y = Math.max(0.1, selectedMesh.position.y-step);
+      }
+      if (selectedMesh.userData.channel) {
+        updateLine(selectedMesh.userData.channel);
+        if (listenerMesh) selectedMesh.lookAt(listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0)));
+      }
+      updateSelectionPanel(selectedMesh);
+      updateSpeakerList();
+    }
+  });
+  window.addEventListener('keyup', e => {
+    if (e.key === 'Shift') { shiftHeld = false; showHeightGuide(null, false); updateModeLabel(); }
+  });
+
+  // Drag-and-drop SOFA / JSON files onto viewport
+  const vp = canvas.parentElement;
+  vp.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect='copy'; });
+  vp.addEventListener('drop', e => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (!f) return;
+    if (f.name.endsWith('.sofa') || f.name.endsWith('.json')) {
+      const dt = new DataTransfer(); dt.items.add(f);
+      const inp = document.getElementById('sofaFile');
+      inp.files = dt.files;
+      loadSOFA(inp);
+    } else {
+      log(`Unbekannter Dateityp: ${f.name}`, 'w');
+    }
+  });
+
   loadPreset('hometheater');
+  buildAzRings();
+  populateInfoTab();
   requestAnimationFrame(animate);
   log('Scene ready · Home Theater 7.1.4 preset loaded', 'ok');
+  log('Shift+Drag = Höhe ändern · Pfeiltasten = Feinpositionierung', '');
 
   setTimeout(() => connectBackend(), 800);
+}
+
+function updateModeLabel() {
+  const lbl = document.getElementById('layoutLabel');
+  // We reuse the badge area for mode hint temporarily
+  if (shiftHeld && dragActive && dragObj) {
+    const el = document.querySelector('.vp-badge b[id=layoutLabel]');
+    if (el) el.style.color = '#ff5722';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1059,6 +1453,7 @@ function setLayout(layout) {
 
   LAYOUTS[layout].forEach(ch => buildSpeaker(ch));
   updateSpeakerList();
+  buildAzRings();
   log(`Layout: ${layout} (${LAYOUTS[layout].length} channels)`, 'ok');
 }
 
@@ -1115,6 +1510,7 @@ function updateRoom() {
   Object.keys(lineObjects).forEach(ch => { scene.remove(lineObjects[ch]); delete lineObjects[ch]; });
   LAYOUTS[l].forEach(ch => buildSpeaker(ch));
   updateSpeakerList();
+  buildAzRings();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1173,28 +1569,59 @@ function onMove(e, ra, mo, canvas) {
 
   if (dragActive && dragObj) {
     canvas.style.cursor = 'grabbing';
-    const planeY = dragObj.position.y;
-    const plane  = new THREE.Plane(new THREE.Vector3(0,1,0), -planeY);
-    const hit    = new THREE.Vector3();
-    ra.ray.intersectPlane(plane, hit);
-    if (hit) {
-      dragObj.position.x = Math.max(-room.w/2+0.2, Math.min(room.w/2-0.2, hit.x));
-      dragObj.position.z = Math.max(-room.d/2+0.2, Math.min(room.d/2-0.2, hit.z));
-      if (dragObj.userData.type === 'speaker' && listenerMesh) {
-        const ear = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
-        dragObj.lookAt(ear);
-        updateLine(dragObj.userData.channel);
+
+    if (shiftHeld) {
+      // ── Shift+drag: adjust HEIGHT (Y axis) ──────────────────
+      // Use vertical mouse delta directly
+      if (!onMove._lastY) onMove._lastY = e.clientY;
+      const dy = (onMove._lastY - e.clientY) * 0.008;
+      onMove._lastY = e.clientY;
+      dragObj.position.y = Math.max(0.05, Math.min(room.h - 0.05, dragObj.position.y + dy));
+      showHeightGuide(dragObj, true);
+
+      // Update all height-guide planes
+      Object.entries(heightGuides).forEach(([k,v]) => {
+        if (k.endsWith('_edge')) return;
+        if (v.isMesh) v.position.y = dragObj.position.y;
+        const edgeMesh = heightGuides[k+'_edge'];
+        if (edgeMesh) {
+          edgeMesh.geometry.attributes.position.array.forEach((_,i) => {
+            if ((i%3)===1) edgeMesh.geometry.attributes.position.array[i] = dragObj.position.y;
+          });
+          edgeMesh.geometry.attributes.position.needsUpdate = true;
+        }
+      });
+    } else {
+      // ── Normal drag: move on horizontal plane ────────────────
+      onMove._lastY = null;
+      showHeightGuide(dragObj, false);
+
+      const planeY = dragObj.position.y;
+      const plane  = new THREE.Plane(new THREE.Vector3(0,1,0), -planeY);
+      const hit    = new THREE.Vector3();
+      ra.ray.intersectPlane(plane, hit);
+      if (hit) {
+        dragObj.position.x = Math.max(-room.w/2+0.2, Math.min(room.w/2-0.2, hit.x));
+        dragObj.position.z = Math.max(-room.d/2+0.2, Math.min(room.d/2-0.2, hit.z));
       }
-      if (dragObj === listenerMesh) {
-        Object.keys(speakerMeshes).forEach(ch => {
-          const ear = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
-          speakerMeshes[ch].lookAt(ear);
-          updateLine(ch);
-        });
-      }
-      updateSelectionPanel(dragObj);
-      updateSpeakerList();
     }
+
+    // Common: aim at listener, update line
+    if (dragObj.userData.type === 'speaker' && listenerMesh) {
+      const ear = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
+      dragObj.lookAt(ear);
+      updateLine(dragObj.userData.channel);
+    }
+    if (dragObj === listenerMesh) {
+      Object.keys(speakerMeshes).forEach(ch => {
+        const ear = listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0));
+        speakerMeshes[ch].lookAt(ear);
+        updateLine(ch);
+      });
+      buildAzRings(); // re-centre rings on listener
+    }
+    updateSelectionPanel(dragObj);
+    updateSpeakerList();
   } else if (orbitActive && orbitLast) {
     const dx = e.clientX - orbitLast.x;
     const dy = e.clientY - orbitLast.y;
@@ -1218,6 +1645,8 @@ function onMove(e, ra, mo, canvas) {
 }
 
 function onUp() {
+  if (dragObj) showHeightGuide(dragObj, false);
+  if (onMove._lastY !== undefined) onMove._lastY = null;
   dragActive = false; dragObj = null;
   orbitActive = false; panActive = false;
 }
@@ -1340,64 +1769,114 @@ function camView(v) {
 // ═══════════════════════════════════════════════════════════════════
 function loadSOFA(input) {
   const f = input.files[0]; if (!f) return;
-  log(`Loading: ${f.name}`, 'i');
-  const rd = new FileReader();
-  rd.onload = e => {
-    if (f.name.endsWith('.json')) {
+  log(`SOFA: ${f.name} (${(f.size/1024).toFixed(0)} KB)`, 'i');
+
+  if (f.name.endsWith('.json')) {
+    // JSON positions file (from sofa_to_json.py)
+    const rd = new FileReader();
+    rd.onload = e => {
       try {
         const data = JSON.parse(e.target.result);
-        const positions = data.positions || data.SourcePosition || null;
-        if (positions && Array.isArray(positions)) {
-          visualizeSOFA(positions, f.name);
-        } else { log('No positions[] found in JSON', 'w'); }
-      } catch(err) { log('JSON parse error: '+err.message, 'e'); }
+        const pos  = data.positions || data.SourcePosition || null;
+        if (pos) visualizeSOFA(pos, f.name, data);
+        else log('JSON: kein positions[] Array gefunden', 'w');
+      } catch(err) { log('JSON parse: '+err.message, 'e'); }
+    };
+    rd.readAsText(f);
+  } else if (f.name.endsWith('.sofa')) {
+    if (backendOnline) {
+      // Backend: speichert direkt ins ASH user/SOFA Verzeichnis!
+      uploadSOFAToBackend(f);
     } else {
-      // Send to backend
-      sendSOFAToBackend(f);
+      log('Backend offline – SOFA binär kann nicht geparst werden.', 'w');
+      log('Option A: python ash_backend.py starten, dann nochmal laden.', '');
+      log('Option B: python sofa_to_json.py datei.sofa → JSON laden.', '');
     }
-  };
-  rd.readAsText(f);
+  }
 }
 
-async function sendSOFAToBackend(file) {
+async function uploadSOFAToBackend(file) {
+  log(`Uploading ${file.name} to ASH user SOFA dir...`, 'i');
   try {
     const fd = new FormData(); fd.append('file', file);
-    const r  = await fetch(backendUrl+'/sofa-positions', { method:'POST', body:fd, signal:AbortSignal.timeout(10000) });
-    if (r.ok) {
-      const d = await r.json();
-      visualizeSOFA(d.positions, file.name, d);
-    } else throw new Error('HTTP '+r.status);
+    const r  = await fetch(backendUrl+'/sofa-upload', {
+      method:'POST', body:fd, signal:AbortSignal.timeout(30000)
+    });
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    log(`✓ ${d.filename} gespeichert${d.saved_to?' → '+d.saved_to:''}`, 'ok');
+    if (d.positions && d.positions.length) {
+      const pos = d.positions.map(p => [p.azimuth, p.elevation, p.radius]);
+      visualizeSOFA(pos, file.name, d);
+    }
+    // Listener-Dropdown aktualisieren
+    if (d.saved_to) {
+      log(`SOFA jetzt in ASH verfügbar → Listener Type: "User SOFA Input"`, 'ok');
+      document.getElementById('pListenerType').value = 'User SOFA Input';
+    }
   } catch(e) {
-    log('SOFA backend error: '+e.message, 'e');
-    log('Tip: python sofa_to_json.py yourfile.sofa → then load the _positions.json', 'w');
+    log('Upload-Fehler: '+e.message, 'e');
   }
 }
 
 function visualizeSOFA(positions, filename, meta) {
-  if (sofaViz) { scene.remove(sofaViz); sofaViz=null; }
-  const g = new THREE.Group();
-  const geo = new THREE.SphereGeometry(0.06, 6, 6);
-  const mat = new THREE.MeshBasicMaterial({ color:0x10b981, transparent:true, opacity:0.65 });
+  if (sofaViz) { scene.remove(sofaViz); sofaViz = null; }
+  if (!positions || !positions.length) { log('SOFA: keine Positionen gefunden', 'w'); return; }
 
+  const g = new THREE.Group();
   const lp = listenerMesh ? listenerMesh.position.clone() : new THREE.Vector3();
+  const earH = lp.y + 1.65;  // Ohrhöhe
+
+  // Skalierung: SOFA-Radius ist in Metern (typisch 1-2m),
+  // wir skalieren auf einen sinnvollen Darstellungsradius relativ zum Raum
+  const displayRadius = Math.min(room.w, room.d) * 0.38;
+
+  let minEl = 999, maxEl = -999, count = 0;
+
   positions.forEach(pos => {
-    const [az, el, r] = Array.isArray(pos) ? pos : [pos.azimuth||0, pos.elevation||0, pos.radius||2];
-    const azR = az*Math.PI/180, elR = el*Math.PI/180, rd = (r||2)*1.3;
-    const dot = new THREE.Mesh(geo, mat.clone());
-    dot.position.set(
-      lp.x + rd*Math.cos(elR)*Math.sin(azR),
-      lp.y + 1.65 + rd*Math.sin(elR),
-      lp.z - rd*Math.cos(elR)*Math.cos(azR)
-    );
+    // SOFA Koordinatensystem: Azimuth 0°=vorne, +90°=links (!)
+    // Elevation 0°=Ohrhöhe, +90°=oben
+    const az = Array.isArray(pos) ? pos[0] : (pos.azimuth  || 0);
+    const el = Array.isArray(pos) ? pos[1] : (pos.elevation || 0);
+    // Radius ignorieren – wir nutzen displayRadius für gleichmäßige Darstellung
+
+    const azR = az * Math.PI / 180;
+    const elR = el * Math.PI / 180;
+
+    // SOFA → Three.js Koordinaten:
+    // SOFA: x=rechts, y=vorne, z=oben  →  Az=0 ist vorne (-Z in Three.js)
+    // Az positiv = links in SOFA, aber wir spiegeln für intuitive Ansicht
+    const x =  displayRadius * Math.cos(elR) * Math.sin(-azR);  // gespiegelt
+    const y =  displayRadius * Math.sin(elR);
+    const z = -displayRadius * Math.cos(elR) * Math.cos(azR);
+
+    // Jeder Punkt bekommt seine EIGENE Geometry-Instanz
+    const geo = new THREE.SphereGeometry(0.055, 5, 4);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x10b981,
+      transparent: true,
+      opacity: 0.7
+    });
+    const dot = new THREE.Mesh(geo, mat);
+    dot.position.set(lp.x + x, earH + y, lp.z + z);
     g.add(dot);
+
+    minEl = Math.min(minEl, el);
+    maxEl = Math.max(maxEl, el);
+    count++;
   });
 
-  sofaViz = g; scene.add(g);
-  const info = `✓ ${positions.length} HRTF positions – ${filename}`;
-  document.getElementById('sofaLoaded').style.display = 'block';
-  document.getElementById('sofaLoaded').textContent  = info;
+  sofaViz = g;
+  scene.add(g);
+
+  const info = `✓ ${count} Messpunkte · El: ${minEl.toFixed(0)}°…${maxEl.toFixed(0)}° – ${filename}`;
+  const loadedEl = document.getElementById('sofaLoaded');
+  if (loadedEl) { loadedEl.style.display = 'block'; loadedEl.textContent = info; }
+  const vizEl = document.getElementById('sofaVizStatus');
+  if (vizEl) vizEl.textContent = `${count} Punkte geladen (${filename})`;
   log(info, 'ok');
-  if (meta?.convention) log(`Convention: ${meta.convention}`, 'i');
+  if (meta?.convention) log(`SOFA Convention: ${meta.convention}`, 'i');
+  if (meta?.num_positions) log(`Datei enthält ${meta.num_positions} Messungen`, 'i');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1405,16 +1884,47 @@ function visualizeSOFA(positions, filename, meta) {
 // ═══════════════════════════════════════════════════════════════════
 async function connectBackend() {
   try {
-    const r = await fetch(backendUrl+'/status', { signal:AbortSignal.timeout(2000) });
-    if (r.ok) {
-      const d = await r.json();
-      setBackend(true, d.ash_available ? 'ASH Ready' : 'No ASH');
-      if (!d.ash_available) log('Backend: set ASH_TOOLSET_PATH env var', 'w');
-    } else throw new Error('HTTP '+r.status);
+    const r = await fetch(backendUrl+'/status', { signal:AbortSignal.timeout(2500) });
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    backendInfo = d; backendOnline = true;
+
+    const typeLabel = {'sourceforge':'SF','github':'GH','none':''}[d.ash_type]||'';
+    setBackend(true, d.ash_available ? `ASH ${typeLabel} ✓` : 'No ASH');
+
+    if (d.ash_type==='sourceforge') log(`ASH-Toolset (SourceForge): ${d.ash_root}`, 'ok');
+    else if (d.ash_type==='github') log(`ASH-Toolset (GitHub): ${d.ash_root}`, 'ok');
+    else log('ASH-Toolset nicht gefunden – synthetische BRIRs werden verwendet', 'w');
+
+    if (d.eqapo_available) log(`Equalizer APO: ${d.eqapo_cfg_dir}`, 'ok');
+    else { log('Equalizer APO: nicht gefunden', 'w'); document.getElementById('togEQAPO')?.classList.remove('on'); }
+
+    if (d.user_sofa_files?.length)
+      log(`User-SOFA: ${d.user_sofa_files.length} Datei(en) → ${d.user_sofa_dir}`, 'ok');
+
+    loadSpacesFromBackend();
+    // Refresh active tab content
+    const activeTab = document.querySelector('.h-tab.active')?.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];
+    if (activeTab) { if(activeTab==='eqapo') populateEQAPOTab(); if(activeTab==='sofa') refreshSOFAList(); if(activeTab==='info') populateInfoTab(); }
   } catch(e) {
-    setBackend(false);
-    log('Backend offline – run: python ash_backend.py', 'w');
+    setBackend(false); backendOnline = false;
+    log('Backend offline – starte: python ash_backend.py', 'w');
   }
+}
+
+async function loadSpacesFromBackend() {
+  try {
+    const r = await fetch(backendUrl+'/ash-spaces', {signal:AbortSignal.timeout(3000)});
+    if (!r.ok) return;
+    const d = await r.json();
+    if (!d.spaces?.length) return;
+    const sel = document.getElementById('pSpace');
+    const cur = sel.value;
+    sel.innerHTML = d.spaces.map(s =>
+      `<option value="${s.name}"${s.name===cur?' selected':''}>${s.name}  (RT60≈${s.rt60}ms)</option>`
+    ).join('');
+    log(`${d.count} Acoustic Spaces aus ASH geladen`, 'ok');
+  } catch(e) { /* silent */ }
 }
 
 function setBackend(ok, msg='') {
@@ -1457,38 +1967,45 @@ function buildConfig() {
       sample_rate:        +document.getElementById('pSR').value,
       bit_depth:          +document.getElementById('pBD').value,
       export_sofa:        document.getElementById('togSOFA').classList.contains('on'),
-      export_wav:         document.getElementById('togWAV').classList.contains('on'),
+      export_wav_brir:    document.getElementById('togWAV').classList.contains('on'),
+      export_hesuvi:      document.getElementById('togHeSuVi')?.classList.contains('on') ?? false,
+      export_jriver:      document.getElementById('togJRiver')?.classList.contains('on') ?? false,
       write_eqapo:        document.getElementById('togEQAPO').classList.contains('on'),
+      eqapo_channel_cfg:  document.getElementById('pEQAPOCh')?.value ?? '7.1',
     }
   };
 }
 
 async function generate() {
   const cfg = buildConfig();
-  log(`Generating: ${currentLayout}, ${Object.keys(cfg.speakers).length} channels…`, 'i');
+  const p   = cfg.ash_params;
+  log(`▶ Generiere: ${cfg.layout} | ${Object.keys(cfg.speakers).length} Kanäle | ${p.acoustic_space}`, 'i');
+  if (p.export_hesuvi)  log('   + HeSuVi config', '');
+  if (p.export_jriver)  log('   + JRiver/Roon manifest', '');
+  if (p.export_sofa)    log('   + SOFA file', '');
+  if (p.write_eqapo)    log('   + Equalizer APO config.txt', '');
   setProgress(true, 10);
 
   try {
     const r = await fetch(backendUrl+'/process', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(cfg), signal:AbortSignal.timeout(120000)
+      body: JSON.stringify(cfg), signal:AbortSignal.timeout(180000)
     });
     setProgress(true, 80);
-    if (r.ok) {
-      const d = await r.json();
-      setProgress(true, 100);
-      log(`✓ Done in ${d.duration_s}s → ${d.output_path}`, 'ok');
-      d.files?.forEach(f => log(`  ${f}`, ''));
-      setTimeout(() => setProgress(false, 0), 1500);
-    } else {
-      const txt = await r.text();
-      throw new Error(txt.slice(0,200));
-    }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || JSON.stringify(d).slice(0,200));
+    setProgress(true, 100);
+    log(`✓ ${d.message}`, 'ok');
+    if (d.output_path) log(`📁 ${d.output_path}`, '');
+    d.files?.forEach(f => log(`   ${f}`, ''));
+    if (d.eqapo_written) log(`🔊 EQ APO aktualisiert → ${d.eqapo_path}`, 'ok');
+    if (d.warnings?.length) d.warnings.forEach(w => log(`⚠  ${w}`, 'w'));
+    setTimeout(() => setProgress(false, 0), 1500);
   } catch(e) {
     setProgress(false, 0);
-    log('Error: '+e.message, 'e');
-    if (!backendOnline) log('→ Start backend: python ash_backend.py', 'w');
-    exportJSON(); // fallback
+    log('Fehler: '+e.message, 'e');
+    if (!backendOnline) log('→ python ash_backend.py starten', 'w');
+    exportJSON();
   }
 }
 
@@ -1502,7 +2019,39 @@ function exportJSON() {
   log(`Config exported: ${a.download}`, 'ok');
 }
 
-function setProgress(show, pct) {
+function snapToITU() {
+  // Reset all speakers to perfect ITU positions for current room/layout
+  const channels = LAYOUTS[currentLayout] || [];
+  channels.forEach(ch => {
+    const obj = speakerMeshes[ch];
+    if (!obj) return;
+    const pos = speakerPosFromAngle(ch);
+    obj.position.copy(pos);
+    if (listenerMesh) {
+      obj.lookAt(listenerMesh.position.clone().add(new THREE.Vector3(0,1.65,0)));
+    }
+    updateLine(ch);
+  });
+  updateSpeakerList();
+  if (selectedMesh) updateSelectionPanel(selectedMesh);
+  log(`Alle Lautsprecher auf ITU-R BS.2051 Positionen zurückgesetzt`, 'ok');
+}
+
+async function openOutputFolder() {
+  if (!backendOnline) {
+    log('Backend offline – Ausgabepfad: ' + (backendInfo.output_dir || '~/ASH-Outputs/RoomDesigner'), 'w');
+    return;
+  }
+  try {
+    // Ask backend to open the folder in Windows Explorer
+    const r = await fetch(backendUrl+'/open-output-folder', {method:'POST', signal:AbortSignal.timeout(3000)});
+    if (!r.ok) throw new Error('not supported');
+    log('Ausgabeordner geöffnet', 'ok');
+  } catch(e) {
+    // Fallback: show path
+    log(`Ausgabepfad: ${backendInfo.output_dir || '~/ASH-Outputs/RoomDesigner'}`, 'i');
+  }
+}
   const bar  = document.getElementById('progBar');
   const fill = document.getElementById('progFill');
   bar.classList.toggle('show', show);
@@ -1521,7 +2070,328 @@ function resetScene() {
 function setTab(t) {
   document.querySelectorAll('.h-tab').forEach(b => b.classList.remove('active'));
   document.querySelector(`.h-tab[onclick*="${t}"]`)?.classList.add('active');
-  log(`Tab: ${t}`, '');
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  const tc = document.getElementById('tc-'+t);
+  if (tc) tc.classList.add('active');
+
+  // Populate tab-specific content
+  if (t === 'eqapo') populateEQAPOTab();
+  if (t === 'info')  populateInfoTab();
+  if (t === 'sofa' && backendOnline) refreshSOFAList();
+}
+
+function populateEQAPOTab() {
+  // EQ APO status
+  const box = document.getElementById('eqapoStatusBox');
+  if (backendInfo.eqapo_available) {
+    box.innerHTML = `<span style="color:var(--acc4);">✓ Gefunden</span><br>
+      Konfig: <span style="color:var(--acc);">${backendInfo.eqapo_cfg_dir || '—'}</span><br>
+      WAV-Ordner: <span style="color:var(--acc);">…\\ASH-RoomDesigner\\</span>`;
+  } else {
+    box.innerHTML = `<span style="color:var(--acc2);">✗ Nicht gefunden</span><br>
+      Download: <span style="color:var(--text);">sourceforge.net/projects/equalizerapo</span>`;
+  }
+
+  // Channel map table
+  const WIN_CH = {L:'FL',R:'FR',C:'C',LFE:'LFE',LS:'RL',RS:'RR',LB:'SBL',RB:'SBR',LTF:'TFL',RTF:'TFR',LTR:'TBL',RTR:'TBR'};
+  const channels = LAYOUTS[currentLayout] || [];
+  const mapEl = document.getElementById('channelMapTable');
+  mapEl.innerHTML = channels.map(ch => {
+    const col = '#'+((CH_COLORS[ch]||0x00d4ff).toString(16).padStart(6,'0'));
+    return `<span style="color:${col}">${ch.padEnd(4)}</span>→ ${(WIN_CH[ch]||ch).padEnd(4)}  ${CH_NAMES[ch]||ch}`;
+  }).join('\n');
+
+  // Preamp calc
+  const preampDb = Math.max(6, channels.length);
+  document.getElementById('preampCalc').innerHTML =
+    `Kanäle: <span style="color:var(--acc)">${channels.length}</span><br>` +
+    `Empf. Preamp: <span style="color:var(--acc2);">-${preampDb} dB</span><br>` +
+    `(verhindert Clipping bei Summe aller BRIRs)`;
+}
+
+function generateEQAPOPreview() {
+  const cfg = buildConfig();
+  const p   = cfg.ash_params;
+  const WIN_CH = {L:'FL',R:'FR',C:'C',LFE:'LFE',LS:'RL',RS:'RR',LB:'SBL',RB:'SBR',LTF:'TFL',RTF:'TFR',LTR:'TBL',RTR:'TBR'};
+  const preamp = Math.max(6, Object.keys(cfg.speakers).length);
+
+  let lines = [
+    `# ASH Room Designer – Equalizer APO Config`,
+    `# Layout: ${cfg.layout}  Space: ${p.acoustic_space}`,
+    `# HRTF: ${p.dataset}  Target: ${p.room_target}`,
+    ``,
+    `Device: all`,
+    `Preamp: -${preamp}dB`,
+    ``
+  ];
+  if (p.hp_rolloff_comp) lines.push(`Filter: ON LSC Fc 80 Hz Gain 4.0 dB Q 0.707\n`);
+
+  Object.entries(cfg.speakers).forEach(([ch, spk]) => {
+    const az = Math.round(spk.azimuth), el = Math.round(spk.elevation);
+    const wav = `BRIR_${ch}_E${String(el).padStart(4,'0').replace('-','-').replace(/^(\d)/,'+$1')}_A${String(az).padStart(4,'0').replace('-','-').replace(/^(\d)/,'+$1')}.wav`;
+    lines.push(`# ${ch}  Az:${az>0?'+':''}${az}°  El:${el>0?'+':''}${el}°`);
+    lines.push(`Channel: ${WIN_CH[ch]||ch}`);
+    lines.push(`Convolution: "${wav}"\n`);
+  });
+
+  document.getElementById('eqapoPreview').textContent = lines.join('\n');
+}
+
+function populateInfoTab() {
+  // ITU reference table
+  const ITU_TABLE = {
+    'L / R':   '±30°  /  0°',
+    'C':       '  0°  /  0°',
+    'LFE':     '−45°  / −15°',
+    'LS / RS': '±110° /  0°',
+    'LB / RB': '±135° /  0°',
+    'LTF/RTF': '±45°  / +45°',
+    'LTR/RTR': '±135° / +45°',
+  };
+  const tbl = document.getElementById('ituTableFull');
+  if (tbl) {
+    tbl.innerHTML = Object.entries(ITU_TABLE).map(([ch,angles]) =>
+      `<span style="color:var(--acc)">${ch.padEnd(9)}</span>${angles}`
+    ).join('\n');
+  }
+  loadLastSession();
+}
+
+async function refreshSOFAList() {
+  const el = document.getElementById('sofaDirList');
+  if (!backendOnline) { el.textContent = 'Backend offline.'; return; }
+  try {
+    const r = await fetch(backendUrl+'/status', {signal:AbortSignal.timeout(3000)});
+    const d = await r.json();
+    const files = d.user_sofa_files || [];
+    if (!files.length) {
+      el.textContent = 'Keine .sofa Dateien im ASH user/SOFA Verzeichnis.';
+      return;
+    }
+    el.innerHTML = files.map(f =>
+      `<div style="padding:3px 0;display:flex;align-items:center;gap:8px;">
+        <span style="color:var(--acc4)">●</span>
+        <span style="cursor:pointer;text-decoration:underline;" onclick="selectSOFAFile('${f}')">${f}</span>
+      </div>`
+    ).join('');
+  } catch(e) { el.textContent = 'Fehler: '+e.message; }
+}
+
+function selectSOFAFile(fname) {
+  document.getElementById('pListenerType').value = 'User SOFA Input';
+  log(`SOFA ausgewählt: ${fname} → Listener Type auf "User SOFA Input" gesetzt`, 'ok');
+  setTab('design');
+}
+
+// ─── Acoustic Space Visualisierung ────────────────────────────────
+// Zeigt die IR-Quellpositionen des gewählten Acoustic Space im 3D-Raum.
+// Diese Positionen kommen aus den CSV-Metadaten die ASH beim Import speichert.
+
+let acSpaceVizGroup = null;
+
+async function loadAcousticSpaceViz() {
+  const spaceName = document.getElementById('pSpace')?.value;
+  if (!spaceName) { log('Kein Acoustic Space gewählt', 'w'); return; }
+
+  // Entferne alte Visualisierung
+  if (acSpaceVizGroup) { scene.remove(acSpaceVizGroup); acSpaceVizGroup = null; }
+
+  log(`Lade Acoustic Space: ${spaceName}...`, 'i');
+
+  if (backendOnline) {
+    try {
+      const r = await fetch(backendUrl + '/acoustic-space-positions?name=' +
+        encodeURIComponent(spaceName), { signal: AbortSignal.timeout(5000) });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.positions && d.positions.length) {
+          visualizeAcousticSpace(d.positions, spaceName, d);
+          return;
+        }
+      }
+    } catch(e) { /* Backend hat keine IR-Positionen → synthetisch */ }
+  }
+
+  // Fallback: synthetische Darstellung basierend auf RT60 und Layout
+  visualizeAcousticSpaceSynthetic(spaceName);
+}
+
+function visualizeAcousticSpaceSynthetic(spaceName) {
+  // Wir wissen: ASH misst für jeden Lautsprecher im gewählten Layout
+  // eine Impulsantwort. Die Positionen entsprechen den aktuellen Lautsprecher-
+  // Positionen im 3D-Raum — das sind genau die cyan-Objekte die schon da sind.
+  // Zusätzlich zeigen wir Reflexionspunkte (erste Reflexionen an Wänden).
+
+  if (acSpaceVizGroup) { scene.remove(acSpaceVizGroup); acSpaceVizGroup = null; }
+  const g = new THREE.Group();
+
+  const lp  = listenerMesh ? listenerMesh.position.clone() : new THREE.Vector3(0,0,0);
+  const earH = lp.y + 1.65;
+  const rt60 = getRt60ForSpace(spaceName);
+
+  // Frühe Reflexionen von Boden, Decke, Seitenwänden simulieren
+  const reflections = computeFirstReflections(lp, earH);
+  reflections.forEach(ref => {
+    const geo = new THREE.SphereGeometry(0.07, 6, 5);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.55 });
+    const dot = new THREE.Mesh(geo, mat);
+    dot.position.copy(ref.point);
+    dot.userData.label = ref.label;
+    g.add(dot);
+
+    // Linie: Lautsprecher → Reflexionspunkt → Listener
+    if (ref.from) {
+      const pts = [ref.from, ref.point, new THREE.Vector3(lp.x, earH, lp.z)];
+      const geo2 = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geo2,
+        new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.18 }));
+      g.add(line);
+    }
+  });
+
+  // RT60-Wolke: zeigt wie diffus/hallig der Raum ist
+  // Mehr Punkte = mehr Nachhall
+  const diffuseCount = Math.min(80, Math.floor(rt60 * 0.06));
+  const rng = mulberry32(42);
+  for (let i = 0; i < diffuseCount; i++) {
+    const az  = rng() * Math.PI * 2;
+    const el  = (rng() - 0.5) * Math.PI * 0.6;
+    const rad = 0.8 + rng() * Math.min(room.w, room.d) * 0.3;
+    const geo = new THREE.SphereGeometry(0.04, 4, 3);
+    const opacity = 0.1 + rng() * 0.2;
+    const mat = new THREE.MeshBasicMaterial({ color: 0x7c3aed, transparent: true, opacity });
+    const dot = new THREE.Mesh(geo, mat);
+    dot.position.set(
+      lp.x + rad * Math.cos(el) * Math.sin(az),
+      earH + rad * Math.sin(el) * 0.4,
+      lp.z + rad * Math.cos(el) * Math.cos(az)
+    );
+    // Nur zeigen wenn innerhalb Raum
+    if (Math.abs(dot.position.x) < room.w/2 && Math.abs(dot.position.z) < room.d/2)
+      g.add(dot);
+  }
+
+  acSpaceVizGroup = g;
+  scene.add(g);
+
+  const infoEl = document.getElementById('acSpaceVizInfo');
+  if (infoEl) {
+    infoEl.style.display = 'block';
+    infoEl.innerHTML =
+      `<b>${spaceName}</b><br>` +
+      `RT60 ≈ ${rt60}ms<br>` +
+      `<span style="color:#f59e0b">●</span> Frühe Reflexionen<br>` +
+      `<span style="color:#7c3aed">●</span> Diffuse Nachhallwolke<br>` +
+      `<span style="color:var(--acc)">●</span> Lautsprecher (editierbar)`;
+  }
+
+  log(`Acoustic Space "${spaceName}" visualisiert (RT60≈${rt60}ms)`, 'ok');
+  log('Gelb = erste Reflexionen · Lila = Nachhall', '');
+}
+
+function computeFirstReflections(lp, earH) {
+  // Berechnet erste Reflexionspunkte für den linken Frontlautsprecher als Beispiel
+  const refs = [];
+  const srcObj = speakerMeshes['L'] || speakerMeshes['LTF'] || Object.values(speakerMeshes)[0];
+  if (!srcObj) return refs;
+
+  const src = srcObj.position.clone();
+  const ear  = new THREE.Vector3(lp.x, earH, lp.z);
+
+  // Boden-Reflexion (Spiegelpunkt unterhalb Boden)
+  const floorMirror = src.clone(); floorMirror.y = -src.y;
+  const floorHit = lineLineClosestPoint(floorMirror, ear, new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,1));
+  refs.push({ point: new THREE.Vector3(lp.x * 0.3, 0.05, (src.z + lp.z) * 0.5), label: 'Bodenreflexion', from: src });
+
+  // Seitenwand links
+  refs.push({ point: new THREE.Vector3(-room.w/2 + 0.1, src.y * 0.7, (src.z + lp.z) * 0.5), label: 'Seitenwand L', from: src });
+
+  // Decke
+  refs.push({ point: new THREE.Vector3((src.x + lp.x)*0.5, room.h - 0.1, (src.z + lp.z)*0.5), label: 'Decke', from: src });
+
+  // Rückwand
+  if (room.d / 2 > 1) {
+    refs.push({ point: new THREE.Vector3(lp.x * 0.2, earH * 0.8, room.d/2 - 0.1), label: 'Rückwand', from: src });
+  }
+
+  return refs;
+}
+
+function lineLineClosestPoint(p1, p2, p3, p4) {
+  // Hilfsfunktion – gibt Mittelpunkt zurück
+  return p1.clone().add(p2).multiplyScalar(0.5);
+}
+
+function getRt60ForSpace(name) {
+  const map = {
+    'Listening Room A':221,'Listening Room B':379,'Listening Room C':562,
+    'Living Room':967,'Small Room A':500,'Control Room':260,
+    'Audio Lab A':305,'Recording Studio A':723,'Cinema':900,
+    'Concert Hall A':1599,'Concert Hall B':1386,'Hall A':1418,
+    'Small Theatre':920,'Treated Room':178,'Studio A':398,
+  };
+  return map[name] || 500;
+}
+
+function mulberry32(seed) {
+  // Deterministischer Pseudozufallsgenerator für reproduzierbare Visualisierung
+  let s = seed;
+  return function() {
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+  if (sofaViz) { scene.remove(sofaViz); sofaViz = null; }
+  document.getElementById('sofaLoaded').style.display = 'none';
+  document.getElementById('sofaVizStatus').textContent = 'Keine SOFA geladen.';
+  log('SOFA-Visualisierung entfernt', 'i');
+}
+
+function uploadSOFAFull(input) {
+  const f = input.files[0]; if (!f) return;
+  uploadSOFAToBackend(f).then(() => {
+    refreshSOFAList();
+    const st = document.getElementById('sofaUploadStatus');
+    if (st) { st.style.display='block'; st.textContent = `✓ ${f.name} gespeichert`; }
+    const viz = document.getElementById('sofaVizStatus');
+    if (viz) viz.textContent = `${f.name} geladen.`;
+  });
+}
+
+function loadJSONPositions(input) {
+  const f = input.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const pos  = data.positions || data.SourcePosition || null;
+      if (pos) {
+        visualizeSOFA(pos, f.name, data);
+        const viz = document.getElementById('sofaVizStatus');
+        if (viz) viz.textContent = `${pos.length} Positionen aus ${f.name}`;
+      } else log('Kein positions[] Array in JSON', 'w');
+    } catch(err) { log('JSON parse: '+err.message, 'e'); }
+  };
+  rd.readAsText(f);
+}
+
+async function loadLastSession() {
+  const el = document.getElementById('lastSessionBox');
+  if (!el) return;
+  if (!backendOnline) { el.textContent = 'Backend offline.'; return; }
+  try {
+    const r = await fetch(backendUrl+'/latest-session', {signal:AbortSignal.timeout(3000)});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    if (!d.session) { el.textContent = 'Noch keine Sessions.'; return; }
+    el.innerHTML = `<span style="color:var(--acc)">${d.session}</span>\n` +
+      d.files.map(f => {
+        const ic = f.type==='.wav'?'🔉':f.type==='.sofa'?'📡':f.type==='.json'?'📋':'📄';
+        return `${ic} ${f.name}  <span style="color:var(--text3)">${(f.size/1024).toFixed(0)}KB</span>`;
+      }).join('\n');
+  } catch(e) { el.textContent = 'Fehler: '+e.message; }
 }
 
 function onListenerTypeChange() {
@@ -1575,12 +2445,23 @@ function animate() {
 
 function onResize() {
   const vp = document.querySelector('.viewport');
-  camera.aspect = vp.clientWidth/vp.clientHeight;
+  const w  = vp.clientWidth  || (window.innerWidth  - 240 - 260);
+  const h  = vp.clientHeight || (window.innerHeight - 46);
+  if (w < 10 || h < 10) return; // skip if layout not ready
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(vp.clientWidth, vp.clientHeight);
+  renderer.setSize(w, h);
 }
 
-window.addEventListener('load', init);
+window.addEventListener('load', () => {
+  // Defer init by one frame so the CSS grid has fully laid out
+  // and clientWidth/clientHeight are correct
+  requestAnimationFrame(() => {
+    init();
+    // Force a resize after second frame to catch any remaining layout shifts
+    requestAnimationFrame(onResize);
+  });
+});
 </script>
 </body>
 </html>
